@@ -1,14 +1,13 @@
+import { useEffect } from "react";
+import { setup } from "xstate";
+import { useActor, useSelector } from "@xstate/react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components";
-
 import { CalendarDateRangePicker } from "@/components/date-range-picker";
 import { Overview } from "@/components/overview";
-
-import { setup } from "xstate";
-import { useActor } from "@xstate/react";
-import { useEffect } from "react";
 import { DailySpecials } from "@/components/daily-specials";
+import { useGlobalActors } from "@/globalState";
 
 type RestaurantManagerContext = object;
 
@@ -35,18 +34,21 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [{ value, context }] = useActor(restaurantManagerMachine);
+  const { branchActor } = useGlobalActors();
+  const selectedBranch = useSelector(branchActor, ({ context }) => context);
 
-  useEffect(() => console.log({ value }), [value]);
-  useEffect(() => console.log({ context }), [context]);
+  // useEffect(() => console.log({ value }), [value]);
+  // useEffect(() => console.log({ context }), [context]);
 
   return (
     <div className="flex-1 h-full p-8 pt-6 space-y-4 overflow-auto">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <div className="flex items-center space-x-2">
+        <h2 className="text-3xl font-bold tracking-tight">
+          Grill Giggle Joint - {selectedBranch.alias}
+        </h2>
+        {/* <div className="flex items-center space-x-2">
           <CalendarDateRangePicker />
-          <Button>Download</Button>
-        </div>
+        </div> */}
       </div>
       {/* <Tabs defaultValue="overview" className="space-y-4"> */}
       {/* <TabsList>

@@ -6,6 +6,7 @@ import "./index.css";
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
+import GlobalActorProvider from "./globalState/GlobalActorProvider";
 
 // Create a new router instance
 const router = createRouter({ routeTree });
@@ -24,7 +25,9 @@ if (!rootElement.innerHTML) {
   root.render(
     <StrictMode>
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <RouterProvider router={router} />
+        <GlobalActorProvider>
+          <RouterProvider router={router} />
+        </GlobalActorProvider>
       </ThemeProvider>
     </StrictMode>
   );

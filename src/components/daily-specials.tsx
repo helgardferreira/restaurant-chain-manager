@@ -20,11 +20,11 @@ function DailySpecial(props: DailySpecialProps) {
       </Avatar>
       <div className="ml-4 space-y-1">
         <p className="text-sm font-medium leading-none">{name}</p>
-        <p className="text-sm truncate text-muted-foreground max-w-36">
+        <p className="text-sm truncate text-muted-foreground max-w-72">
           {description}
         </p>
       </div>
-      <div className="ml-auto font-medium">{day}</div>
+      <div className="self-start ml-auto">{day}</div>
     </div>
   );
 }

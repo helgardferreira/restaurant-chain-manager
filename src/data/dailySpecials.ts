@@ -31,14 +31,8 @@ const dailySpecials: DailySpecial[] = [
     drinkPairing: "Craft IPA or Blueberry Iced Tea",
     side: "Garlic-parmesan fries",
     ingredients: {
-      burger: [
-        "beef patty",
-        "blue cheese",
-        "caramelized onions",
-        "arugula",
-        "brioche bun",
-      ],
-      side: ["potatoes", "garlic", "parmesan cheese"],
+      burger: ["beef", "cheese", "onions", "arugula", "bun"],
+      side: ["potatoes", "garlic", "cheese"],
     },
     imageSrc: new URL(
       "@/assets/burgers/blue-monday-burger.png",
@@ -55,14 +49,17 @@ const dailySpecials: DailySpecial[] = [
     side: "Spicy sweet potato wedges",
     ingredients: {
       burger: [
-        "ground beef",
+        "beef",
         "chorizo",
-        "pepper jack cheese",
+        "cheese",
         "avocado",
-        "pico de gallo",
-        "ciabatta roll",
+        "tomatoes",
+        "lemon",
+        "onions",
+        "peppers",
+        "bun",
       ],
-      side: ["sweet potatoes", "spices"],
+      side: ["potatoes"],
     },
     imageSrc: new URL(
       "@/assets/burgers/taco-burger-fiesta.png",
@@ -78,14 +75,8 @@ const dailySpecials: DailySpecial[] = [
     drinkPairing: "Chardonnay or Cream Soda",
     side: "Truffle oil and parmesan dusted shoestring fries",
     ingredients: {
-      burger: [
-        "portobello mushroom",
-        "Swiss cheese",
-        "sautéed mushrooms",
-        "thyme mayo",
-        "whole wheat bun",
-      ],
-      side: ["potatoes", "truffle oil", "parmesan cheese"],
+      burger: ["mushrooms", "cheese", "mayonnaise", "bun"],
+      side: ["potatoes", "truffle oil", "cheese"],
     },
     imageSrc: new URL(
       "@/assets/burgers/midweek-mushroom-melt.png",
@@ -101,14 +92,7 @@ const dailySpecials: DailySpecial[] = [
     drinkPairing: "Bourbon-based cocktail or Root Beer",
     side: "Coleslaw and classic fries",
     ingredients: {
-      burger: [
-        "smoked beef patty",
-        "bacon",
-        "cheddar cheese",
-        "onion rings",
-        "BBQ sauce",
-        "pretzel bun",
-      ],
+      burger: ["beef", "bacon", "cheese", "onions", "bun", "BBQ sauce"],
       side: ["cabbage", "carrots", "mayonnaise", "potatoes"],
     },
     imageSrc: new URL("@/assets/burgers/bbq-bacon-bonanza.png", import.meta.url)
@@ -123,13 +107,7 @@ const dailySpecials: DailySpecial[] = [
     drinkPairing: "Pilsner or Sparkling Lemonade",
     side: "Lemon-herb seasoned potato wedges",
     ingredients: {
-      burger: [
-        "cod fillet",
-        "tartar sauce",
-        "pickled cucumbers",
-        "lettuce",
-        "sesame seed bun",
-      ],
+      burger: ["cod", "tartar sauce", "cucumbers", "lettuce", "bun"],
       side: ["potatoes", "lemon", "herbs"],
     },
     imageSrc: new URL(
@@ -147,12 +125,12 @@ const dailySpecials: DailySpecial[] = [
     side: "Chili cheese fries",
     ingredients: {
       burger: [
-        "beef patty",
+        "beef",
         "sriracha sauce",
         "jalapeños",
-        "pepper jack cheese",
-        "crispy onions",
-        "jalapeño-cheddar bun",
+        "cheese",
+        "onions",
+        "bun",
       ],
       side: ["potatoes", "chili", "cheese"],
     },
@@ -170,15 +148,8 @@ const dailySpecials: DailySpecial[] = [
     drinkPairing: "Pinot Noir or Iced Green Tea",
     side: "Rosemary and sea salt roasted baby potatoes",
     ingredients: {
-      burger: [
-        "beef patty",
-        "mushrooms",
-        "Gruyère cheese",
-        "sun-dried tomatoes",
-        "umami ketchup",
-        "potato roll",
-      ],
-      side: ["baby potatoes", "rosemary", "sea salt"],
+      burger: ["beef", "mushrooms", "cheese", "tomatoes", "ketchup", "bun"],
+      side: ["potatoes", "rosemary"],
     },
     imageSrc: new URL(
       "@/assets/burgers/ultimate-umami-burger.png",

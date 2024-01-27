@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
-import TeamSwitcher from "./team-switcher";
-import { Search } from "./search";
+import BranchSwitcher from "./branch-switcher";
 import { UserNav } from "./user-nav";
+import { Link } from "@tanstack/react-router";
 
 export function MainNav({
   className,
@@ -9,41 +9,45 @@ export function MainNav({
 }: React.HTMLAttributes<HTMLElement>) {
   return (
     <div className="border-b">
-      <div className="flex items-center h-16 px-4">
-        <TeamSwitcher />
+      <div className="flex items-center h-16 px-8">
+        <BranchSwitcher />
 
         <nav
           className={cn("flex items-center space-x-4 lg:space-x-6", className)}
           {...props}
         >
-          <a
-            href="#"
-            className="text-sm font-medium transition-colors hover:text-primary"
+          <Link
+            to="/"
+            activeProps={{ className: "underline" }}
+            className={cn(
+              "text-sm",
+              "font-medium",
+              "transition-colors",
+              "hover:text-primary",
+              "underline-offset-4",
+              "hover:underline"
+            )}
           >
             Overview
-          </a>
-          <a
-            href="#"
-            className="text-sm font-medium transition-colors text-muted-foreground hover:text-primary"
-          >
-            Customers
-          </a>
-          <a
-            href="#"
-            className="text-sm font-medium transition-colors text-muted-foreground hover:text-primary"
-          >
-            Products
-          </a>
-          <a
-            href="#"
-            className="text-sm font-medium transition-colors text-muted-foreground hover:text-primary"
+          </Link>
+          <Link
+            to="/settings"
+            activeProps={{ className: "underline" }}
+            className={cn(
+              "text-sm",
+              "font-medium",
+              "transition-colors",
+              "hover:text-primary",
+              "underline-offset-4",
+              "hover:underline"
+            )}
           >
             Settings
-          </a>
+          </Link>
         </nav>
 
         <div className="flex items-center ml-auto space-x-4">
-          <Search />
+          {/* <Search /> */}
           <UserNav />
         </div>
       </div>
