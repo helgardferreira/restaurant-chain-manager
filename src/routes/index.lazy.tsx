@@ -2,7 +2,7 @@ import { useSelector } from "@xstate/react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components";
-import { Overview } from "@/components/overview";
+import { StockOverview } from "@/components/overview";
 import { BurgerSpecials } from "@/components/burger-specials";
 import { useGlobalActors } from "@/globalState";
 
@@ -121,17 +121,17 @@ function Index() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Overview</CardTitle>
+            <CardTitle>Stock Overview</CardTitle>
           </CardHeader>
           <CardContent className="h-96">
-            <Overview />
+            <StockOverview />
           </CardContent>
         </Card>
         <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Specials</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4">
             <BurgerSpecials />
           </CardContent>
         </Card>

@@ -1,4 +1,4 @@
-interface BurgerSpecial {
+type BurgerSpecial = {
   id: string;
   name: string;
   description: string;
@@ -6,12 +6,12 @@ interface BurgerSpecial {
   side: string;
   ingredients: Ingredient[];
   imageSrc: string;
-}
+};
 
-interface Ingredient {
+type Ingredient = {
   id: string;
   name: string;
-}
+};
 
 const burgerSpecials: BurgerSpecial[] = [
   {

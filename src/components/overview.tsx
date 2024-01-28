@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -8,11 +9,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { intersectionBy } from "lodash";
 
 import { Ingredient, ingredients } from "@/data/burgerSpecials";
 import { useTheme } from "@/lib/hooks/useTheme";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { useGlobalActors } from "@/globalState";
+import { useSelector } from "@xstate/react";
 
 type IngredientStock = Ingredient & {
   total: number;
@@ -20,7 +23,7 @@ type IngredientStock = Ingredient & {
 
 const data: IngredientStock[] = ingredients.map((ingredient) => ({
   ...ingredient,
-  total: Math.floor(Math.random() * 5000) + 1000,
+  total: Math.floor(Math.random() * 40 + 10),
 }));
 
 type TooltipItem = IngredientStock & {
@@ -32,7 +35,7 @@ type ChartTooltipProps = TooltipProps<number, string> & {
 };
 
 function ChartTooltip(props: ChartTooltipProps) {
-  const { payload } = props;
+  const { className, payload } = props;
   const item = useMemo(
     (): TooltipItem | undefined =>
       payload && payload[0]
@@ -66,8 +69,8 @@ function ChartTooltip(props: ChartTooltipProps) {
         "data-[side=bottom]:slide-in-from-top-2",
         "data-[side=left]:slide-in-from-right-2",
         "data-[side=right]:slide-in-from-left-2",
-        "data-[side=top]:slide-in-from-bottom-2"
-        // className
+        "data-[side=top]:slide-in-from-bottom-2",
+        className
       )}
     >
       {item && <p className="font-medium">{item.name}</p>}
@@ -80,36 +83,53 @@ function ChartTooltip(props: ChartTooltipProps) {
   );
 }
 
-export function Overview() {
+export function StockOverview() {
   const { theme } = useTheme();
+  const { restaurantActor } = useGlobalActors();
+  const currentSpecial = useSelector(
+    restaurantActor,
+    ({ context }) => context.currentSpecial
+  );
+  const computedData = useMemo(
+    () =>
+      currentSpecial
+        ? intersectionBy(data, currentSpecial.ingredients, "id")
+        : data,
+    [currentSpecial]
+  );
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data}>
+      <BarChart data={computedData} margin={{ bottom: 50 }}>
         <XAxis
           dataKey="name"
           stroke="#888888"
           fontSize={12}
-          tick={false}
+          // tick={false}
           tickLine={false}
           axisLine={false}
+          angle={45}
+          dx={15}
+          dy={36}
+          minTickGap={-200}
+          padding={{ right: 40 }}
         >
           <Label
             value="Ingredients"
             fontSize={12}
             offset={0}
-            position="inside"
+            position="center"
             style={{
               fill: theme === "light" ? "#09090b" : "#fafafa",
             }}
           />
         </XAxis>
-        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false}>
+        <YAxis stroke="#888888" fontSize={12} transform="translate(-4, 0)">
           <Label
             angle={-90}
             value="Stock"
             fontSize={12}
-            offset={0}
+            offset={15}
             position="insideLeft"
             style={{
               fill: theme === "light" ? "#09090b" : "#fafafa",

@@ -28,7 +28,7 @@ export function MainNav({
               "hover:underline"
             )}
           >
-            Overview
+            Manage
           </Link>
           <Link
             to="/settings"
