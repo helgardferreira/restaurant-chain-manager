@@ -1,4 +1,4 @@
-type BurgerSpecial = {
+type Meal = {
   id: string;
   name: string;
   description: string;
@@ -13,7 +13,7 @@ type Ingredient = {
   name: string;
 };
 
-const burgerSpecials: BurgerSpecial[] = [
+const meals: Meal[] = [
   {
     id: "blue-burger",
     name: "The Blue Burger",
@@ -194,6 +194,6 @@ const ingredients: Ingredient[] = [
   { id: "truffle-oil", name: "Truffle Oil" },
 ];
 
-export type { BurgerSpecial, Ingredient };
+export type { Meal, Ingredient };
 
-export { ingredients, burgerSpecials };
+export { ingredients, meals };

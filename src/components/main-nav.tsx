@@ -47,7 +47,6 @@ export function MainNav({
         </nav>
 
         <div className="flex items-center ml-auto space-x-4">
-          {/* <Search /> */}
           <UserNav />
         </div>
       </div>

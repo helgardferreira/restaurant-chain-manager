@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { intersectionBy } from "lodash";
 
-import { Ingredient, ingredients } from "@/data/burgerSpecials";
+import { Ingredient, ingredients } from "@/data/meals";
 import { useTheme } from "@/lib/hooks/useTheme";
 import { cn } from "@/lib/utils";
 import { useGlobalActors } from "@/globalState";
@@ -86,16 +86,16 @@ function ChartTooltip(props: ChartTooltipProps) {
 export function StockOverview() {
   const { theme } = useTheme();
   const { restaurantActor } = useGlobalActors();
-  const currentSpecial = useSelector(
+  const currentMealView = useSelector(
     restaurantActor,
-    ({ context }) => context.currentSpecial
+    ({ context }) => context.currentMealView
   );
   const computedData = useMemo(
     () =>
-      currentSpecial
-        ? intersectionBy(data, currentSpecial.ingredients, "id")
+      currentMealView
+        ? intersectionBy(data, currentMealView.ingredients, "id")
         : data,
-    [currentSpecial]
+    [currentMealView]
   );
 
   return (
@@ -105,7 +105,6 @@ export function StockOverview() {
           dataKey="name"
           stroke="#888888"
           fontSize={12}
-          // tick={false}
           tickLine={false}
           axisLine={false}
           angle={45}

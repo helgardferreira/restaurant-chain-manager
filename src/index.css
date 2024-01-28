@@ -78,4 +78,5 @@
 html,
 body {
   overscroll-behavior-y: none;
+  overflow: hidden;
 }
