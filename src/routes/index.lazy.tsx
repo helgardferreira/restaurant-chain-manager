@@ -1,44 +1,18 @@
-import { useEffect } from "react";
-import { setup } from "xstate";
-import { useActor, useSelector } from "@xstate/react";
+import { useSelector } from "@xstate/react";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components";
-import { CalendarDateRangePicker } from "@/components/date-range-picker";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components";
 import { Overview } from "@/components/overview";
-import { DailySpecials } from "@/components/daily-specials";
+import { BurgerSpecials } from "@/components/burger-specials";
 import { useGlobalActors } from "@/globalState";
-
-type RestaurantManagerContext = object;
-
-type InitEvent = { type: "INIT" };
-type RestaurantManagerEvent = InitEvent;
-
-const restaurantManagerMachine = setup({
-  types: {} as {
-    context: RestaurantManagerContext;
-    events: RestaurantManagerEvent;
-  },
-}).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5gF8A0IB2B7CdGgCc4AXAQwFcDSNiBZa0mA-EABy1gEtjOsMWAHogC0ANnQBPEaORoQRWGUrU6DJgDpOEADZgW7Ljz6DEAFgBMkxAA4AjOoCss2UA */
-  id: "restaurantManager",
-  initial: "idle",
-  states: {
-    idle: {},
-  },
-});
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
-  const [{ value, context }] = useActor(restaurantManagerMachine);
   const { branchActor } = useGlobalActors();
   const selectedBranch = useSelector(branchActor, ({ context }) => context);
-
-  // useEffect(() => console.log({ value }), [value]);
-  // useEffect(() => console.log({ context }), [context]);
 
   return (
     <div className="flex-1 h-full p-8 pt-6 space-y-4 overflow-auto">
@@ -46,24 +20,7 @@ function Index() {
         <h2 className="text-3xl font-bold tracking-tight">
           Grill Giggle Joint - {selectedBranch.alias}
         </h2>
-        {/* <div className="flex items-center space-x-2">
-          <CalendarDateRangePicker />
-        </div> */}
       </div>
-      {/* <Tabs defaultValue="overview" className="space-y-4"> */}
-      {/* <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics" disabled>
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="reports" disabled>
-              Reports
-            </TabsTrigger>
-            <TabsTrigger value="notifications" disabled>
-              Notifications
-            </TabsTrigger>
-          </TabsList> */}
-      {/* <TabsContent value="overview" className="space-y-4"> */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -172,16 +129,13 @@ function Index() {
         </Card>
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Daily Specials</CardTitle>
-            {/* <CardDescription></CardDescription> */}
+            <CardTitle>Specials</CardTitle>
           </CardHeader>
           <CardContent>
-            <DailySpecials />
+            <BurgerSpecials />
           </CardContent>
         </Card>
       </div>
-      {/* </TabsContent> */}
-      {/* </Tabs> */}
     </div>
   );
 }

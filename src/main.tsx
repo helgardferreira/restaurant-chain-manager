@@ -24,7 +24,7 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <StrictMode>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+      <ThemeProvider defaultTheme="system" storageKey="dashboard-theme">
         <GlobalActorProvider>
           <RouterProvider router={router} />
         </GlobalActorProvider>

@@ -1,19 +1,16 @@
 import { createContext } from "react";
 
-type Theme = "dark" | "light" | "system";
+type Theme = "dark" | "light";
+type ThemeOverride = Theme | "system";
 
 type ThemeProviderState = {
   theme: Theme;
-  setTheme: (theme: Theme) => void;
+  themeOverride: ThemeOverride;
+  setThemeOverride: (theme: ThemeOverride) => void;
 };
 
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => null,
-};
+const ThemeProviderContext = createContext<ThemeProviderState | null>(null);
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
-
-export type { Theme, ThemeProviderState };
+export type { ThemeOverride, Theme, ThemeProviderState };
 
 export { ThemeProviderContext };

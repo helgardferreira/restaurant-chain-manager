@@ -1,50 +1,76 @@
-import { Theme, ThemeProviderContext } from "@/lib/theme-context";
-import { useEffect, useState } from "react";
+import {
+  Theme,
+  ThemeOverride,
+  ThemeProviderContext,
+} from "@/lib/theme-context";
+import { useEffect, useRef, useState } from "react";
 import { fromEvent, map, startWith } from "rxjs";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
-  defaultTheme?: Theme;
+  defaultTheme?: ThemeOverride;
   storageKey?: string;
 };
 
-export function ThemeProvider({
-  children,
-  defaultTheme = "system",
-  storageKey = "vite-ui-theme",
-  ...props
-}: ThemeProviderProps) {
+const usePrefersDarkMode = (themeOverride: ThemeOverride = "system") => {
+  const colorSchemeQueryRef = useRef(
+    window.matchMedia("(prefers-color-scheme: dark)")
+  );
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    colorSchemeQueryRef.current ? "dark" : "light"
   );
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const sub = fromEvent<MediaQueryListEvent>(colorSchemeQuery, "change")
+    const sub = fromEvent<MediaQueryListEvent>(
+      colorSchemeQueryRef.current,
+      "change"
+    )
       .pipe(
-        startWith(colorSchemeQuery),
+        startWith(colorSchemeQueryRef.current),
         map(({ matches }) =>
-          theme === "system" ? (matches ? "dark" : "light") : theme
+          themeOverride === "system"
+            ? matches
+              ? "dark"
+              : "light"
+            : themeOverride
         )
       )
-      .subscribe((derivedTheme) => {
-        // Remove existing theme classes
-        root.classList.remove("light", "dark");
-        root.classList.add(derivedTheme);
+      .subscribe((theme) => {
+        setTheme(theme);
       });
 
     return () => {
       sub.unsubscribe();
     };
+  }, [themeOverride]);
+
+  return theme;
+};
+
+export function ThemeProvider({
+  children,
+  defaultTheme = "system",
+  storageKey = "dashboard-theme",
+  ...props
+}: ThemeProviderProps) {
+  const [themeOverride, setThemeOverride] = useState<ThemeOverride>(
+    () => (localStorage.getItem(storageKey) as ThemeOverride) || defaultTheme
+  );
+  const rootRef = useRef(window.document.documentElement);
+
+  const theme = usePrefersDarkMode(themeOverride);
+
+  useEffect(() => {
+    rootRef.current.classList.remove("light", "dark");
+    rootRef.current.classList.add(theme);
   }, [theme]);
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
+    themeOverride,
+    setThemeOverride: (themeOverride: ThemeOverride) => {
+      localStorage.setItem(storageKey, themeOverride);
+      setThemeOverride(themeOverride);
     },
   };
 
