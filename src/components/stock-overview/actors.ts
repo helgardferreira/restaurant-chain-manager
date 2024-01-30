@@ -1,4 +1,4 @@
-import { Actor, fromObservable } from "xstate";
+import { fromObservable } from "xstate";
 import {
   from,
   filter,
@@ -10,18 +10,21 @@ import {
   distinctUntilChanged,
   switchMap,
   combineLatestWith,
-  startWith,
   bufferCount,
 } from "rxjs";
 
 import { fromIndexSearch } from "@/lib/observables/router";
-import { fromActor, toRunningArray } from "@/lib/observables/utils";
-import { restaurantMachine } from "@/lib/actors/restaurant.machine";
+import {
+  fromCurrentRestaurantActor,
+  toActorState,
+  toRunningArray,
+} from "@/lib/observables/utils";
 
 import { Meal, meals, Ingredient, ingredients } from "@/data/meals";
 import { randomWithSeed, hashStringToNumber } from "@/lib/utils";
 
 import { IngredientStock } from "./types";
+import { BranchActor } from "@/lib/actors/branch.machine";
 
 const fromRandomMeals = (meals: Meal[]) =>
   from(meals).pipe(filter(() => Math.random() > 0.8));
@@ -63,15 +66,9 @@ const fromRandomIngredientsStock = () =>
     map((stock) => stock.at(-1) ?? [])
   );
 
-// TODO: might be ways to make this more performant (there might be unnecessary iteration)
-const dataLogic = fromObservable<
-  IngredientStock[],
-  { restaurantActor: Actor<typeof restaurantMachine> }
-  // TODO replace input with system.get()
->(({ input: { restaurantActor } }) => {
-  return fromActor(restaurantActor).pipe(
-    startWith(restaurantActor.getSnapshot()),
-    map(({ context }) => context.currentMealView?.ingredients ?? []),
+const fromStockData = (branchActor: BranchActor) =>
+  fromCurrentRestaurantActor(branchActor).pipe(
+    toActorState(({ context }) => context.currentMealView?.ingredients ?? []),
     combineLatestWith(
       // TODO: replace with data from state machine and not random data
       fromRandomInMenuIngredients(),
@@ -96,6 +93,11 @@ const dataLogic = fromObservable<
       })
     )
   );
-});
+
+// TODO: might be ways to make this more performant (there might be unnecessary iteration)
+const dataLogic = fromObservable<
+  IngredientStock[],
+  { branchActor: BranchActor }
+>(({ input: { branchActor } }) => fromStockData(branchActor));
 
 export { dataLogic };

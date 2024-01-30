@@ -1,4 +1,11 @@
-import { assign, fromEventObservable, setup } from "xstate";
+import {
+  Actor,
+  ActorLogicFrom,
+  ActorRefFrom,
+  assign,
+  fromEventObservable,
+  setup,
+} from "xstate";
 import { distinctUntilChanged, map } from "rxjs";
 
 import {
@@ -7,6 +14,7 @@ import {
 } from "@/data/restaurantBranches";
 
 import { fromIndexSearch } from "../observables/router";
+import { restaurantMachine } from "./restaurant.machine";
 
 type BranchUrlChangeEvent = {
   type: "BRANCH_URL_CHANGE";
@@ -15,6 +23,8 @@ type BranchUrlChangeEvent = {
 
 type BranchMachineContext = {
   currentBranch?: RestaurantBranch;
+  currentRestaurantActor?: ActorRefFrom<typeof restaurantMachine>;
+  restaurantActors: ActorRefFrom<typeof restaurantMachine>[];
 };
 
 type BranchMachineEvent = BranchUrlChangeEvent;
@@ -25,6 +35,7 @@ const branchMachine = setup({
     events: {} as BranchMachineEvent,
   },
   actors: {
+    restaurantMachine,
     branchUrlChange: fromEventObservable(() =>
       fromIndexSearch().pipe(
         map((search) => search.branch ?? "the-magic-city-grill"),
@@ -39,16 +50,50 @@ const branchMachine = setup({
     ),
   },
   actions: {
-    setCurrentBranch: assign((_, params: { branch: string }) => ({
-      currentBranch: restaurantBranches.find(({ id }) => id === params.branch),
-    })),
+    setCurrentBranch: assign((_, params: { branch: string }) => {
+      console.log("set current branch");
+
+      return {
+        currentBranch: restaurantBranches.find(
+          ({ id }) => id === params.branch
+        ),
+      };
+    }),
+    spawnNewRestaurant: assign(
+      ({ spawn, context: { restaurantActors }, event }) => {
+        const existingActor = restaurantActors.find(
+          ({ id }) => id === event.branch
+        );
+
+        if (existingActor) {
+          return {
+            currentRestaurantActor: existingActor,
+          };
+        }
+
+        const newRestaurantMachine = spawn("restaurantMachine", {
+          id: event.branch,
+          systemId: event.branch,
+          input: {
+            branch: event.branch,
+          },
+        });
+
+        return {
+          currentRestaurantActor: newRestaurantMachine,
+          restaurantActors: restaurantActors.concat(newRestaurantMachine),
+        };
+      }
+    ),
     logActiveEntry: () => console.log("active node entered"),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QCMBOBDAdgYwBYGIAhAJQEEA5AYQAkB9AVWIBlaaKBxAUQG0AGAXUSgADgHtYASwAuE0ZiEgAHogAsAJgA0IAJ6I1ARhUA6ABwBOAMxq1Z-QDYHjswF9nWtFjxH02GQDcwIjIqOkYWNnIuPkEkEDFJGTkFZQQ1AHZ9IzUAVi1dBH01EyNs1zcQTFEIOAUPHFwFeOlZeViUgFo7PMRO13cMeu9fCQDG8Waktr00tNN7FV47HO7UmyMzbItC0vK6rwkIABswMYSW5MR9Q1M03J1L7LsjC0trW0cnMucgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QCMBOBDAdgYwBYGIAhAJQEEA5AYQAkB9AVWIBlaaKBxAUQG0AGAXUSgADgHtYASwAuE0ZiEgAHogAsAJgA0IAJ6I1agBwA6AMwA2AJwB2CwEYzDxw4C+zrWix4j6bDIBuYERkVHSMLGzkXHyCSCBikjJyCsoIala2RmoArLy8tlnZBlYGFrxmWroItoZGWa5uIJiiEHAKHji4CvHSsvKxKQC05TqIQ67uGB3evhIBXeI9Sf16VlZGBvbq+bxFJWUVellmRqVm2eMg7V4SEAA2YPMJvcmItrYq61Y5vFZnFiYWFRZEwHKqWdaWGz2JyOerOIA */
   id: "branch",
 
-  context: {},
+  context: {
+    restaurantActors: [],
+  },
   initial: "idle",
 
   states: {
@@ -58,10 +103,13 @@ const branchMachine = setup({
       on: {
         BRANCH_URL_CHANGE: {
           target: "active",
-          actions: {
-            type: "setCurrentBranch",
-            params: ({ event: { branch } }) => ({ branch }),
-          },
+          actions: [
+            {
+              type: "setCurrentBranch",
+              params: ({ event: { branch } }) => ({ branch }),
+            },
+            "spawnNewRestaurant",
+          ],
         },
       },
     },
@@ -77,12 +125,20 @@ const branchMachine = setup({
     BRANCH_URL_CHANGE: {
       target: ".active",
 
-      actions: {
-        type: "setCurrentBranch",
-        params: ({ event: { branch } }) => ({ branch }),
-      },
+      actions: [
+        {
+          type: "setCurrentBranch",
+          params: ({ event: { branch } }) => ({ branch }),
+        },
+        "spawnNewRestaurant",
+      ],
     },
   },
 });
+
+type BranchActor = Actor<typeof branchMachine>;
+type BranchLogic = ActorLogicFrom<typeof branchMachine>
+
+export type { BranchActor, BranchLogic };
 
 export { branchMachine };

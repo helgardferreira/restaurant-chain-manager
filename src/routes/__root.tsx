@@ -1,6 +1,8 @@
 import React, { Suspense } from "react";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
+
 import { MainNav } from "@/components/main-nav";
+import GlobalActorProvider from "@/globalState/GlobalActorProvider";
 
 const TanStackRouterDevtools =
   process.env.NODE_ENV === "production"
@@ -16,7 +18,7 @@ const TanStackRouterDevtools =
 
 export const Route = createRootRoute({
   component: () => (
-    <>
+    <GlobalActorProvider>
       <div className="flex flex-col h-full overflow-hidden">
         <MainNav className="mx-6" />
 
@@ -25,6 +27,6 @@ export const Route = createRootRoute({
       <Suspense fallback={null}>
         <TanStackRouterDevtools />
       </Suspense>
-    </>
+    </GlobalActorProvider>
   ),
 });

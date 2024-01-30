@@ -1,12 +1,9 @@
 import { createContext, useContext } from "react";
-import type { Actor } from "xstate";
 
-import { branchMachine } from "@/lib/actors/branch.machine";
-import { restaurantMachine } from "@/lib/actors/restaurant.machine";
+import type { BranchActor } from "@/lib/actors/branch.machine";
 
 interface GlobalActors {
-  branchActor: Actor<typeof branchMachine>;
-  restaurantActor: Actor<typeof restaurantMachine>;
+  branchActor: BranchActor;
 }
 
 export const GlobalActorContext = createContext<GlobalActors | null>(null);

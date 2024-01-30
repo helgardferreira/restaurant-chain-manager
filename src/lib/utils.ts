@@ -35,3 +35,12 @@ export function titleCase(text: string) {
 export function splitCamelCase(text: string) {
   return text.replace(/([a-z])([A-Z])/g, "$1 $2");
 }
+
+export function nameToInitials(name: string): string {
+  const words = name.split(" ");
+  const initials = words
+    .filter((word) => word.toLowerCase() !== "the")
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
+  return initials;
+}

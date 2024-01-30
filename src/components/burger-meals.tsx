@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
-import { useSelector } from "@xstate/react";
+import { fromObservable } from "xstate";
+import { useActor } from "@xstate/react";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   Avatar,
@@ -19,16 +20,23 @@ import {
 
 import { type Meal, meals } from "@/data/meals";
 import { useGlobalActors } from "@/globalState";
-import { cn } from "@/lib/utils";
+import { cn, nameToInitials } from "@/lib/utils";
+import {
+  fromCurrentRestaurantActor,
+  toActorState,
+} from "@/lib/observables/utils";
+import { BranchActor } from "@/lib/actors/branch.machine";
 
-function nameToInitials(name: string): string {
-  const words = name.split(" ");
-  const initials = words
-    .filter((word) => word.toLowerCase() !== "the")
-    .map((word) => word.charAt(0).toUpperCase())
-    .join("");
-  return initials;
-}
+const restaurantRefLogic = fromObservable(
+  ({ input: { branchActor } }: { input: { branchActor: BranchActor } }) =>
+    fromCurrentRestaurantActor(branchActor)
+);
+const currentMealViewLogic = fromObservable(
+  ({ input: { branchActor } }: { input: { branchActor: BranchActor } }) =>
+    fromCurrentRestaurantActor(branchActor).pipe(
+      toActorState(({ context }) => context.currentMealView)
+    )
+);
 
 type BurgerMealProps = {
   meal: Meal;
@@ -39,28 +47,32 @@ function BurgerMeal(props: BurgerMealProps) {
   const { meal, minimized = false } = props;
   const { imageSrc, name, ingredients } = meal;
 
-  const { restaurantActor } = useGlobalActors();
-  const currentMealView = useSelector(
-    restaurantActor,
-    ({ context }) => context.currentMealView
-  );
+  // TODO: create custom hooks
+  const { branchActor } = useGlobalActors();
+  const [{ context: restaurantActor }] = useActor(restaurantRefLogic, {
+    input: { branchActor },
+  });
+  const [{ context: currentMealView }] = useActor(currentMealViewLogic, {
+    input: { branchActor },
+  });
+
   const mealIsActive = useMemo(
     () => currentMealView?.id === meal.id,
     [currentMealView?.id, meal.id]
   );
   const addMealToMenu = useCallback(() => {
-    restaurantActor.send({
+    restaurantActor?.send({
       type: "ADD_MEAL",
       meal,
     });
   }, [restaurantActor, meal]);
   const toggleViewMeal = useCallback(() => {
     if (mealIsActive) {
-      restaurantActor.send({
+      restaurantActor?.send({
         type: "CLEAR_MEAL",
       });
     } else {
-      restaurantActor.send({
+      restaurantActor?.send({
         type: "VIEW_MEAL",
         meal,
       });
@@ -191,12 +203,20 @@ function BurgerMeal(props: BurgerMealProps) {
   );
 }
 
+const mealIsSelectedLogic = fromObservable(
+  ({ input: { branchActor } }: { input: { branchActor: BranchActor } }) =>
+    fromCurrentRestaurantActor(branchActor).pipe(
+      toActorState(({ context }) => !!context.currentMealView)
+    )
+);
+
 export function BurgerMeals() {
-  const { restaurantActor } = useGlobalActors();
-  const mealIsSelected = useSelector(
-    restaurantActor,
-    ({ context }) => !!context.currentMealView
-  );
+  const { branchActor } = useGlobalActors();
+
+  // TODO: create custom hook for child actor, selectors, etc.
+  const [{ context: mealIsSelected }] = useActor(mealIsSelectedLogic, {
+    input: { branchActor },
+  });
 
   return (
     <ScrollArea blockDisplay>

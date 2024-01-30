@@ -1,4 +1,5 @@
-import { useSelector } from "@xstate/react";
+import { fromObservable } from "xstate";
+import { useActor, useSelector } from "@xstate/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
@@ -13,8 +14,13 @@ import { BurgerMeals } from "@/components/burger-meals";
 import { StockOverview } from "@/components/stock-overview";
 import MealView from "@/components/meal-view";
 
-import { useGlobalActors } from "@/globalState";
 import { cn } from "@/lib/utils";
+import {
+  fromCurrentRestaurantActor,
+  toActorState,
+} from "@/lib/observables/utils";
+import { useGlobalActors } from "@/globalState";
+import { BranchActor } from "@/lib/actors/branch.machine";
 
 const indexSearchSchema = z.object({
   branch: z.string().optional(),
@@ -27,16 +33,24 @@ export const Route = createFileRoute("/")({
   validateSearch: indexSearchSchema,
 });
 
+const mealIsSelectedLogic = fromObservable(
+  ({ input: { branchActor } }: { input: { branchActor: BranchActor } }) =>
+    fromCurrentRestaurantActor(branchActor).pipe(
+      toActorState(({ context }) => !!context.currentMealView)
+    )
+);
+
 function Index() {
-  const { branchActor, restaurantActor } = useGlobalActors();
+  const { branchActor } = useGlobalActors();
   const currentBranch = useSelector(
     branchActor,
     ({ context }) => context.currentBranch
   );
-  const mealIsSelected = useSelector(
-    restaurantActor,
-    ({ context }) => !!context.currentMealView
-  );
+
+  // TODO: create custom hook for child actor, selectors, etc.
+  const [{ context: mealIsSelected }] = useActor(mealIsSelectedLogic, {
+    input: { branchActor },
+  });
 
   return (
     <ScrollArea blockDisplay>

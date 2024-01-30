@@ -11,19 +11,19 @@ import {
 } from "recharts";
 
 import { useTheme } from "@/lib/hooks/useTheme";
+import { splitCamelCase, titleCase } from "@/lib/utils";
 import { useGlobalActors } from "@/globalState";
 
 import { dataLogic } from "./actors";
 import { ChartTooltip } from "./chart-tooltip";
-import { splitCamelCase, titleCase } from "@/lib/utils";
 
 export function StockOverview() {
   const { theme } = useTheme();
-  const { restaurantActor } = useGlobalActors();
+  const { branchActor } = useGlobalActors();
 
   const [{ context: data }] = useActor(dataLogic, {
     input: {
-      restaurantActor,
+      branchActor,
     },
   });
 
