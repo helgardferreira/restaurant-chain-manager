@@ -2,14 +2,16 @@ import { setup, spawnChild, sendTo, assign } from "xstate";
 
 import { Meal } from "@/data/meals";
 
-type SetDailySpecialEvent = {
-  type: "SET_DAILY_SPECIAL";
+type AddMealEvent = {
+  type: "ADD_MEAL";
   meal: Meal;
 };
 
-type KitchenContext = object;
+type KitchenContext = {
+  menu: Meal[];
+};
 
-type KitchenEvent = SetDailySpecialEvent;
+type KitchenEvent = AddMealEvent;
 
 const kitchenMachine = setup({
   types: {} as {
@@ -17,23 +19,25 @@ const kitchenMachine = setup({
     events: KitchenEvent;
   },
   actions: {
-    setDailySpecial: (_, params: { meal: Meal }) => console.log(params.meal),
+    addMealToMenu: (_, params: { meal: Meal }) => console.log(params.meal),
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QGsCWAXAxgCzAOwDoBDTdVANzAGIBlAUQBUB9AEQEEBJAGQE0maACnQDCHNlwDaABgC6iUAAcA9rAyoleeSAAeiACwAmADQgAnogCMBgBwEArAF8nJvEohwtaLLk1IQy1TINLV0EAFoANhNzcIjnEC8cfGJSCjAtALVgv1CATgiCKQB2ays7aMQDA1yCXLsAZjKnJyA */
   id: "kitchen",
 
-  context: {},
+  context: {
+    menu: [],
+  },
 
   initial: "active",
 
   states: {
     active: {
       on: {
-        SET_DAILY_SPECIAL: {
+        ADD_MEAL: {
           target: "active",
           actions: {
-            type: "setDailySpecial",
+            type: "addMealToMenu",
             params: ({ event }) => ({ meal: event.meal }),
           },
         },
@@ -48,7 +52,7 @@ type RestaurantContext = {
 
 type ViewMealEvent = { type: "VIEW_MEAL"; meal: Meal };
 type ClearMealEvent = { type: "CLEAR_MEAL" };
-type RestaurantEvent = SetDailySpecialEvent | ViewMealEvent | ClearMealEvent;
+type RestaurantEvent = AddMealEvent | ViewMealEvent | ClearMealEvent;
 
 const restaurantMachine = setup({
   types: {} as {
@@ -59,9 +63,9 @@ const restaurantMachine = setup({
     spawnKitchen: spawnChild(kitchenMachine, {
       id: "kitchen",
     }),
-    setDailySpecial: sendTo("kitchen", (_, params: { meal: Meal }) => ({
-      type: "SET_DAILY_SPECIAL",
-      special: params.meal,
+    addMealToMenu: sendTo("kitchen", (_, params: { meal: Meal }) => ({
+      type: "ADD_MEAL",
+      meal: params.meal,
     })),
     setCurrentMealView: assign((_, params: { meal: Meal }) => ({
       currentMealView: params.meal,
@@ -71,7 +75,7 @@ const restaurantMachine = setup({
     })),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QCc4BcCGBXZGB2aAdBgMZoCWAbmAMQDKAogCoD6AIgIICSAMgJos6ABQYBhLhx4BtAAwBdRKAAOAe1jkKKvIpAAPRABYATABoQAT0QBmIwEZCBmQDYjAVgC+7s6liYc+IlIKahoANS4GAHUWAFkGSVkFJBBVdU1tZP0EAwAOQitbJ0cXVzNLBCMjA0IATlcCt09vdGxcAmIyKlpRHniAJVj46XkdVI1yLR0sgytCW2K3MsRbIzyPJpA8FQg4HR8-NrRRtXHJzMQAWiclhCuN-daAjuCwY7SJjNAsmqdCGQB2HIrUoWQyVQg5Vw1Kz-daeIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QCc4BcCGBXZGB2aAdBgMZoCWAbmAMQCCAIgwPoCyAonQDIDaADAF1EoAA4B7WOQpi8wkAA9EAVgAchAIwA2PuqWaATEoA0IAJ6IAzPvWEALHwNKAvk5OpYmHPiKkK1GgBqAJLsAOpsnLyCcuKS0rJICoi2AOwaKUopKuqGJuYI+vq2hACcShY5zq4g7p64BMRkVLQAwlycAEoR3PxCibFS5DJyigi2+nmIOWpV1XhiEHBytdj1aDESg8OJowC0mpMI+y5u6KvejX5gG3FDCaCjJcUlFhmH4-qEKkovGS4uQA */
   id: "restaurant",
 
   context: {
@@ -83,10 +87,10 @@ const restaurantMachine = setup({
   states: {
     active: {
       on: {
-        SET_DAILY_SPECIAL: {
+        ADD_MEAL: {
           target: "active",
           actions: {
-            type: "setDailySpecial",
+            type: "addMealToMenu",
             params: ({ event }) => ({ meal: event.meal }),
           },
         },

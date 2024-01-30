@@ -1,11 +1,12 @@
-import { branchLogic } from "@/lib/actors/branch.actor";
-import { restaurantMachine } from "@/lib/actors/restaurant.machine";
 import { createContext, useContext } from "react";
-import { ActorRefFrom } from "xstate";
+import type { Actor } from "xstate";
+
+import { branchMachine } from "@/lib/actors/branch.machine";
+import { restaurantMachine } from "@/lib/actors/restaurant.machine";
 
 interface GlobalActors {
-  branchActor: ActorRefFrom<typeof branchLogic>;
-  restaurantActor: ActorRefFrom<typeof restaurantMachine>;
+  branchActor: Actor<typeof branchMachine>;
+  restaurantActor: Actor<typeof restaurantMachine>;
 }
 
 export const GlobalActorContext = createContext<GlobalActors | null>(null);

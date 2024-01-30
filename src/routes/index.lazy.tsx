@@ -1,5 +1,6 @@
 import { useSelector } from "@xstate/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 
 import {
   Card,
@@ -9,19 +10,29 @@ import {
   ScrollArea,
 } from "@/components";
 import { BurgerMeals } from "@/components/burger-meals";
-import { StockOverview } from "@/components/overview";
+import { StockOverview } from "@/components/stock-overview";
 import MealView from "@/components/meal-view";
 
 import { useGlobalActors } from "@/globalState";
 import { cn } from "@/lib/utils";
 
+const indexSearchSchema = z.object({
+  branch: z.string().optional(),
+});
+
+export type IndexSearch = z.infer<typeof indexSearchSchema>;
+
 export const Route = createFileRoute("/")({
   component: Index,
+  validateSearch: indexSearchSchema,
 });
 
 function Index() {
   const { branchActor, restaurantActor } = useGlobalActors();
-  const selectedBranch = useSelector(branchActor, ({ context }) => context);
+  const currentBranch = useSelector(
+    branchActor,
+    ({ context }) => context.currentBranch
+  );
   const mealIsSelected = useSelector(
     restaurantActor,
     ({ context }) => !!context.currentMealView
@@ -32,7 +43,7 @@ function Index() {
       <div className="flex-1 h-full p-8 pt-6 space-y-4">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">
-            Grill Giggle Joint - {selectedBranch.alias}
+            Grill Giggle Joint{currentBranch && " - " + currentBranch.alias}
           </h2>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

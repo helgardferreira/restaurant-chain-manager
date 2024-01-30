@@ -1,4 +1,5 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
+import { useSelector } from "@xstate/react";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   Avatar,
@@ -19,7 +20,6 @@ import {
 import { type Meal, meals } from "@/data/meals";
 import { useGlobalActors } from "@/globalState";
 import { cn } from "@/lib/utils";
-import { useSelector } from "@xstate/react";
 
 function nameToInitials(name: string): string {
   const words = name.split(" ");
@@ -44,14 +44,18 @@ function BurgerMeal(props: BurgerMealProps) {
     restaurantActor,
     ({ context }) => context.currentMealView
   );
-  const setDailySpecial = useCallback(() => {
+  const mealIsActive = useMemo(
+    () => currentMealView?.id === meal.id,
+    [currentMealView?.id, meal.id]
+  );
+  const addMealToMenu = useCallback(() => {
     restaurantActor.send({
-      type: "SET_DAILY_SPECIAL",
+      type: "ADD_MEAL",
       meal,
     });
   }, [restaurantActor, meal]);
-  const viewMeal = useCallback(() => {
-    if (currentMealView?.id === meal.id) {
+  const toggleViewMeal = useCallback(() => {
+    if (mealIsActive) {
       restaurantActor.send({
         type: "CLEAR_MEAL",
       });
@@ -61,14 +65,14 @@ function BurgerMeal(props: BurgerMealProps) {
         meal,
       });
     }
-  }, [currentMealView?.id, meal, restaurantActor]);
+  }, [mealIsActive, meal, restaurantActor]);
   const handleMealSelect = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter") {
-        viewMeal();
+        toggleViewMeal();
       }
     },
-    [viewMeal]
+    [toggleViewMeal]
   );
 
   return (
@@ -90,6 +94,7 @@ function BurgerMeal(props: BurgerMealProps) {
               "grow",
               "select-none",
               "hover:bg-accent",
+              currentMealView?.id === meal.id && "bg-accent",
               "cursor-pointer",
               "ring-offset-background",
               "focus-visible:outline-none",
@@ -98,7 +103,7 @@ function BurgerMeal(props: BurgerMealProps) {
               "focus-visible:ring-offset-2",
               "transition-[padding,border-radius]"
             )}
-            onClick={viewMeal}
+            onClick={toggleViewMeal}
             onKeyUp={handleMealSelect}
           >
             <Avatar
@@ -144,9 +149,11 @@ function BurgerMeal(props: BurgerMealProps) {
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem onSelect={viewMeal}>View stock</ContextMenuItem>
-          <ContextMenuItem onSelect={setDailySpecial}>
-            Set daily special
+          <ContextMenuItem onSelect={toggleViewMeal}>
+            {mealIsActive ? "Close meal" : "View meal"}
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={addMealToMenu}>
+            Add meal to menu
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
@@ -172,9 +179,11 @@ function BurgerMeal(props: BurgerMealProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onSelect={viewMeal}>View stock</DropdownMenuItem>
-          <DropdownMenuItem onSelect={setDailySpecial}>
-            Set daily special
+          <DropdownMenuItem onSelect={toggleViewMeal}>
+            {mealIsActive ? "Close meal" : "View meal"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={addMealToMenu}>
+            Add meal to menu
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
