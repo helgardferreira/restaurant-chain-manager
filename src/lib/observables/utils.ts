@@ -14,9 +14,12 @@ import {
   type SnapshotFrom,
   AnyStateMachine,
   ActorRefFrom,
+  AnyActor,
 } from "xstate";
-import { KitchenLogic, RestaurantActor } from "../actors/restaurant.machine";
-import { BranchActor } from "../actors/branch.machine";
+
+import { RestaurantActor } from "../actors/restaurant.machine";
+import { BranchDirectorActor } from "../actors/branchDirector.machine";
+import { KitchenLogic } from "../actors/kitchen.machine";
 
 export function toRunningArray<T extends object>(
   comparator: (source: T, against: T) => boolean = (previous, current) => {
@@ -49,25 +52,35 @@ export function fromActor<TLogic extends AnyActorLogic>(
 
 export function fromChildActor<
   TChildMachine extends AnyStateMachine,
-  TMachine extends AnyStateMachine = AnyStateMachine,
->(restaurantActor: Actor<TMachine>, childId: string) {
-  return fromActor(restaurantActor).pipe(
-    startWith(restaurantActor.getSnapshot()),
-    map((snapshot) => snapshot as SnapshotFrom<TMachine>),
+  TActor extends AnyActor = AnyActor,
+>(parentActor: TActor, childId: string) {
+  return fromActor(parentActor).pipe(
+    startWith(parentActor.getSnapshot()),
+    map((snapshot) => snapshot as SnapshotFrom<TActor>),
     map(({ children }) => children[childId] as Actor<TChildMachine>),
-    distinctUntilChanged(),
-    switchMap((child) =>
-      fromActor(child).pipe(
-        startWith(child.getSnapshot()),
-        map((snapshot) => snapshot as SnapshotFrom<TChildMachine>)
-      )
-    )
+    distinctUntilChanged()
   );
 }
 
-export function fromCurrentRestaurantActor(branchActor: BranchActor) {
-  return fromActor(branchActor).pipe(
-    startWith(branchActor.getSnapshot()),
+export function toChildActor<
+  TChildMachine extends AnyStateMachine,
+  TActor extends AnyActor = AnyActor,
+>(childId: string) {
+  return (source: Observable<TActor>) =>
+    source.pipe(
+      switchMap((actor) =>
+        fromActor(actor).pipe(startWith(actor.getSnapshot()))
+      ),
+      map(({ children }) => children[childId] as Actor<TChildMachine>),
+      distinctUntilChanged()
+    );
+}
+
+export function fromCurrentRestaurantActor(
+  branchDirectorActor: BranchDirectorActor
+) {
+  return fromActor(branchDirectorActor).pipe(
+    startWith(branchDirectorActor.getSnapshot()),
     map(({ context }) => context.currentRestaurantActor),
     filter((restaurantActor) => !!restaurantActor),
     map((restaurantActor) => restaurantActor as RestaurantActor),
@@ -75,20 +88,21 @@ export function fromCurrentRestaurantActor(branchActor: BranchActor) {
   );
 }
 
+// TODO: maybe remove
 export function fromKitchenActor(restaurantActor: RestaurantActor) {
-  return fromChildActor<KitchenLogic>(restaurantActor, "kitchen");
+  return fromChildActor<KitchenLogic>(restaurantActor, "kitchen").pipe(
+    toActorState((snapshot) => snapshot)
+  );
 }
 
 // TODO: make more generic
-export function toActorState<T>(
-  selector: (emitted: SnapshotFrom<RestaurantActor>) => T
+export function toActorState<T, TActor extends AnyActor>(
+  selector: (emitted: SnapshotFrom<TActor>) => T
 ) {
-  return (source: Observable<RestaurantActor>) =>
+  return (source: Observable<TActor>) =>
     source.pipe(
-      switchMap((restaurantActor) =>
-        fromActor(restaurantActor).pipe(
-          startWith(restaurantActor.getSnapshot())
-        )
+      switchMap((actor) =>
+        fromActor(actor).pipe(startWith(actor.getSnapshot()))
       ),
       map(selector),
       distinctUntilChanged()

@@ -19,12 +19,10 @@ import {
   toActorState,
   toRunningArray,
 } from "@/lib/observables/utils";
-
-import { Meal, meals, Ingredient, ingredients } from "@/data/meals";
 import { randomWithSeed, hashStringToNumber } from "@/lib/utils";
-
-import { IngredientStock } from "./types";
-import { BranchActor } from "@/lib/actors/branch.machine";
+import { IngredientStock } from "@/lib/types";
+import { BranchDirectorActor } from "@/lib/actors/branchDirector.machine";
+import { Meal, meals, Ingredient, ingredients } from "@/data/meals";
 
 const fromRandomMeals = (meals: Meal[]) =>
   from(meals).pipe(filter(() => Math.random() > 0.8));
@@ -54,7 +52,7 @@ const fromRandomInMenuIngredients = () =>
 
 const fromRandomIngredientsStock = () =>
   fromIndexSearch().pipe(
-    map((search) => search.branch ?? "the-magic-city-grill"),
+    map((search) => search.branchId ?? "the-magic-city-grill"),
     distinctUntilChanged(),
     switchMap((branch) =>
       from(ingredients).pipe(
@@ -66,8 +64,8 @@ const fromRandomIngredientsStock = () =>
     map((stock) => stock.at(-1) ?? [])
   );
 
-const fromStockData = (branchActor: BranchActor) =>
-  fromCurrentRestaurantActor(branchActor).pipe(
+const fromStockData = (branchDirectorActor: BranchDirectorActor) =>
+  fromCurrentRestaurantActor(branchDirectorActor).pipe(
     toActorState(({ context }) => context.currentMealView?.ingredients ?? []),
     combineLatestWith(
       // TODO: replace with data from state machine and not random data
@@ -97,7 +95,7 @@ const fromStockData = (branchActor: BranchActor) =>
 // TODO: might be ways to make this more performant (there might be unnecessary iteration)
 const dataLogic = fromObservable<
   IngredientStock[],
-  { branchActor: BranchActor }
->(({ input: { branchActor } }) => fromStockData(branchActor));
+  { branchDirectorActor: BranchDirectorActor }
+>(({ input: { branchDirectorActor } }) => fromStockData(branchDirectorActor));
 
 export { dataLogic };

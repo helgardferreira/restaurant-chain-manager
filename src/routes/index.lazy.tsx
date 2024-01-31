@@ -20,10 +20,10 @@ import {
   toActorState,
 } from "@/lib/observables/utils";
 import { useGlobalActors } from "@/globalState";
-import { BranchActor } from "@/lib/actors/branch.machine";
+import { BranchDirectorActor } from "@/lib/actors/branchDirector.machine";
 
 const indexSearchSchema = z.object({
-  branch: z.string().optional(),
+  branchId: z.string().optional(),
 });
 
 export type IndexSearch = z.infer<typeof indexSearchSchema>;
@@ -34,22 +34,26 @@ export const Route = createFileRoute("/")({
 });
 
 const mealIsSelectedLogic = fromObservable(
-  ({ input: { branchActor } }: { input: { branchActor: BranchActor } }) =>
-    fromCurrentRestaurantActor(branchActor).pipe(
+  ({
+    input: { branchDirectorActor },
+  }: {
+    input: { branchDirectorActor: BranchDirectorActor };
+  }) =>
+    fromCurrentRestaurantActor(branchDirectorActor).pipe(
       toActorState(({ context }) => !!context.currentMealView)
     )
 );
 
 function Index() {
-  const { branchActor } = useGlobalActors();
+  const { branchDirectorActor } = useGlobalActors();
   const currentBranch = useSelector(
-    branchActor,
+    branchDirectorActor,
     ({ context }) => context.currentBranch
   );
 
   // TODO: create custom hook for child actor, selectors, etc.
   const [{ context: mealIsSelected }] = useActor(mealIsSelectedLogic, {
-    input: { branchActor },
+    input: { branchDirectorActor },
   });
 
   return (

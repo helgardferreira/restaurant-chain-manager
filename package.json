@@ -34,7 +34,6 @@
     "lucide-react": "^0.316.0",
     "random-js": "^2.1.0",
     "react": "^18.2.0",
-    "react-day-picker": "^8.10.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.10.4",
     "rxjs": "^7.8.1",

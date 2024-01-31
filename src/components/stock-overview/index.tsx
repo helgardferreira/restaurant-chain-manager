@@ -19,11 +19,11 @@ import { ChartTooltip } from "./chart-tooltip";
 
 export function StockOverview() {
   const { theme } = useTheme();
-  const { branchActor } = useGlobalActors();
+  const { branchDirectorActor } = useGlobalActors();
 
   const [{ context: data }] = useActor(dataLogic, {
     input: {
-      branchActor,
+      branchDirectorActor,
     },
   });
 

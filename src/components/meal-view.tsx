@@ -4,23 +4,27 @@ import { useActor } from "@xstate/react";
 import { Button, ScrollArea } from ".";
 
 import { useGlobalActors } from "@/globalState";
-import { BranchActor } from "@/lib/actors/branch.machine";
+import { BranchDirectorActor } from "@/lib/actors/branchDirector.machine";
 import {
   fromCurrentRestaurantActor,
   toActorState,
 } from "@/lib/observables/utils";
 
 const currentMealViewLogic = fromObservable(
-  ({ input: { branchActor } }: { input: { branchActor: BranchActor } }) =>
-    fromCurrentRestaurantActor(branchActor).pipe(
+  ({
+    input: { branchDirectorActor },
+  }: {
+    input: { branchDirectorActor: BranchDirectorActor };
+  }) =>
+    fromCurrentRestaurantActor(branchDirectorActor).pipe(
       toActorState(({ context }) => context.currentMealView)
     )
 );
 
 export default function MealView() {
-  const { branchActor } = useGlobalActors();
+  const { branchDirectorActor } = useGlobalActors();
   const [{ context: currentMealView }] = useActor(currentMealViewLogic, {
-    input: { branchActor },
+    input: { branchDirectorActor },
   });
 
   if (!currentMealView) return null;

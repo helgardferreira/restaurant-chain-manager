@@ -18,51 +18,50 @@ import { restaurantMachine } from "./restaurant.machine";
 
 type BranchUrlChangeEvent = {
   type: "BRANCH_URL_CHANGE";
-  branch: string;
+  branchId: string;
 };
 
-type BranchMachineContext = {
+type BranchDirectorMachineContext = {
   currentBranch?: RestaurantBranch;
   currentRestaurantActor?: ActorRefFrom<typeof restaurantMachine>;
   restaurantActors: ActorRefFrom<typeof restaurantMachine>[];
 };
 
-type BranchMachineEvent = BranchUrlChangeEvent;
+type BranchDirectorMachineEvent = BranchUrlChangeEvent;
 
-const branchMachine = setup({
+const branchDirectorMachine = setup({
   types: {
-    context: {} as BranchMachineContext,
-    events: {} as BranchMachineEvent,
+    context: {} as BranchDirectorMachineContext,
+    events: {} as BranchDirectorMachineEvent,
   },
   actors: {
     restaurantMachine,
     branchUrlChange: fromEventObservable(() =>
       fromIndexSearch().pipe(
-        map((search) => search.branch ?? "the-magic-city-grill"),
+        map((search) => search.branchId ?? "the-magic-city-grill"),
         distinctUntilChanged(),
         map(
-          (branch): BranchUrlChangeEvent => ({
+          (branchId): BranchUrlChangeEvent => ({
             type: "BRANCH_URL_CHANGE",
-            branch,
+            branchId,
           })
         )
       )
     ),
   },
   actions: {
-    setCurrentBranch: assign((_, params: { branch: string }) => {
-      console.log("set current branch");
-
-      return {
-        currentBranch: restaurantBranches.find(
-          ({ id }) => id === params.branch
-        ),
-      };
-    }),
+    setCurrentBranch: assign((_, params: { branchId: string }) => ({
+      currentBranch: restaurantBranches.find(
+        ({ id }) => id === params.branchId
+      ),
+    })),
     spawnNewRestaurant: assign(
-      ({ spawn, context: { restaurantActors }, event }) => {
+      (
+        { spawn, context: { restaurantActors } },
+        params: { branchId: string }
+      ) => {
         const existingActor = restaurantActors.find(
-          ({ id }) => id === event.branch
+          ({ id }) => id === params.branchId
         );
 
         if (existingActor) {
@@ -72,10 +71,10 @@ const branchMachine = setup({
         }
 
         const newRestaurantMachine = spawn("restaurantMachine", {
-          id: event.branch,
-          systemId: event.branch,
+          id: params.branchId,
+          systemId: params.branchId,
           input: {
-            branch: event.branch,
+            branchId: params.branchId,
           },
         });
 
@@ -85,11 +84,10 @@ const branchMachine = setup({
         };
       }
     ),
-    logActiveEntry: () => console.log("active node entered"),
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QCMBOBDAdgYwBYGIAhAJQEEA5AYQAkB9AVWIBlaaKBxAUQG0AGAXUSgADgHtYASwAuE0ZiEgAHogAsAJgA0IAJ6I1agBwA6AMwA2AJwB2CwEYzDxw4C+zrWix4j6bDIBuYERkVHSMLGzkXHyCSCBikjJyCsoIala2RmoArLy8tlnZBlYGFrxmWroItoZGWa5uIJiiEHAKHji4CvHSsvKxKQC05TqIQ67uGB3evhIBXeI9Sf16VlZGBvbq+bxFJWUVellmRqVm2eMg7V4SEAA2YPMJvcmItrYq61Y5vFZnFiYWFRZEwHKqWdaWGz2JyOerOIA */
-  id: "branch",
+  id: "branchDirector",
 
   context: {
     restaurantActors: [],
@@ -98,17 +96,18 @@ const branchMachine = setup({
 
   states: {
     active: {
-      entry: "logActiveEntry",
-
       on: {
         BRANCH_URL_CHANGE: {
           target: "active",
           actions: [
             {
               type: "setCurrentBranch",
-              params: ({ event: { branch } }) => ({ branch }),
+              params: ({ event: { branchId } }) => ({ branchId }),
             },
-            "spawnNewRestaurant",
+            {
+              type: "spawnNewRestaurant",
+              params: ({ event: { branchId } }) => ({ branchId }),
+            },
           ],
         },
       },
@@ -128,17 +127,20 @@ const branchMachine = setup({
       actions: [
         {
           type: "setCurrentBranch",
-          params: ({ event: { branch } }) => ({ branch }),
+          params: ({ event: { branchId } }) => ({ branchId }),
         },
-        "spawnNewRestaurant",
+        {
+          type: "spawnNewRestaurant",
+          params: ({ event: { branchId } }) => ({ branchId }),
+        },
       ],
     },
   },
 });
 
-type BranchActor = Actor<typeof branchMachine>;
-type BranchLogic = ActorLogicFrom<typeof branchMachine>
+type BranchDirectorActor = Actor<typeof branchDirectorMachine>;
+type BranchDirectorLogic = ActorLogicFrom<typeof branchDirectorMachine>;
 
-export type { BranchActor, BranchLogic };
+export type { BranchDirectorActor, BranchDirectorLogic };
 
-export { branchMachine };
+export { branchDirectorMachine };

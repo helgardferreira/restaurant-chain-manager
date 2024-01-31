@@ -35,9 +35,9 @@ interface BranchSwitcherProps extends PopoverTriggerProps {}
 export default function BranchSwitcher({ className }: BranchSwitcherProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { branchActor } = useGlobalActors();
+  const { branchDirectorActor } = useGlobalActors();
   const currentBranch = useSelector(
-    branchActor,
+    branchDirectorActor,
     ({ context }) => context.currentBranch
   );
 
@@ -89,7 +89,7 @@ export default function BranchSwitcher({ className }: BranchSwitcherProps) {
                     navigate({
                       to: "/",
                       search: {
-                        branch: branch.id,
+                        branchId: branch.id,
                       },
                     });
                   }}

@@ -1,9 +1,9 @@
 import { createContext, useContext } from "react";
 
-import type { BranchActor } from "@/lib/actors/branch.machine";
+import type { BranchDirectorActor } from "@/lib/actors/branchDirector.machine";
 
 interface GlobalActors {
-  branchActor: BranchActor;
+  branchDirectorActor: BranchDirectorActor;
 }
 
 export const GlobalActorContext = createContext<GlobalActors | null>(null);

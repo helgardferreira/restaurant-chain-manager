@@ -2,7 +2,7 @@ import { PropsWithChildren } from "react";
 import { Observer, Subscription } from "xstate";
 import { useActorRef } from "@xstate/react";
 
-import { branchMachine } from "@/lib/actors/branch.machine";
+import { branchDirectorMachine } from "@/lib/actors/branchDirector.machine";
 
 import { GlobalActorContext } from "./globalActorContext";
 
@@ -17,16 +17,10 @@ declare module "xstate" {
 }
 
 export default function GlobalActorProvider(props: PropsWithChildren) {
-  const branchActor = useActorRef(branchMachine);
-  // const { branch } = IndexRoute.useSearch();
-  // const restaurantActor = useActorRef(restaurantMachine, {
-  //   input: {
-  //     branch: branch ?? "branch=the-magic-city-grill",
-  //   },
-  // });
+  const branchDirectorActor = useActorRef(branchDirectorMachine);
 
   return (
-    <GlobalActorContext.Provider value={{ branchActor }}>
+    <GlobalActorContext.Provider value={{ branchDirectorActor }}>
       {props.children}
     </GlobalActorContext.Provider>
   );
