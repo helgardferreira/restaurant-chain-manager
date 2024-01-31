@@ -17,7 +17,9 @@ declare module "xstate" {
 }
 
 export default function GlobalActorProvider(props: PropsWithChildren) {
-  const branchDirectorActor = useActorRef(branchDirectorMachine);
+  const branchDirectorActor = useActorRef(branchDirectorMachine, {
+    systemId: "branchDirector",
+  });
 
   return (
     <GlobalActorContext.Provider value={{ branchDirectorActor }}>

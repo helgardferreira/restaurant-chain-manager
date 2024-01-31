@@ -1,11 +1,4 @@
-import {
-  setup,
-  spawnChild,
-  sendTo,
-  assign,
-  Actor,
-  ActorLogicFrom,
-} from "xstate";
+import { setup, sendTo, assign, Actor, ActorLogicFrom } from "xstate";
 
 import { Meal } from "@/data/meals";
 
@@ -58,6 +51,7 @@ const restaurantMachine = setup({
     spawnKitchen: assign(({ context: { branchId }, spawn }) => {
       spawn("kitchenMachine", {
         id: "kitchen",
+        systemId: `${branchId}.kitchen`,
         input: {
           branchId,
         },
@@ -65,8 +59,13 @@ const restaurantMachine = setup({
 
       return {};
     }),
-    spawnFrontOfHouse: spawnChild("frontOfHouseMachine", {
-      id: "frontOfHouse",
+    spawnFrontOfHouse: assign(({ context: { branchId }, spawn }) => {
+      spawn("frontOfHouseMachine", {
+        id: "frontOfHouse",
+        systemId: `${branchId}.frontOfHouse`,
+      });
+
+      return {};
     }),
     addMealToMenu: sendTo("kitchen", (_, params: { meal: Meal }) => ({
       type: "ADD_MEAL",

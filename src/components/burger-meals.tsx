@@ -23,15 +23,14 @@ import { useGlobalActors } from "@/globalState";
 import { cn, nameToInitials } from "@/lib/utils";
 import {
   fromChildActor,
+  sendSystemEvent,
   toActorState,
-  toChildActor,
 } from "@/lib/observables/utils";
 import {
   BranchDirectorActor,
   BranchDirectorLogic,
 } from "@/lib/actors/branchDirector.machine";
 import { RestaurantLogic } from "@/lib/actors/restaurant.machine";
-import { ChefLogic, KitchenLogic } from "@/lib/actors/kitchen.machine";
 
 const restaurantRefLogic = fromObservable(
   ({
@@ -236,25 +235,25 @@ const mealIsSelectedLogic = fromObservable(
 export function BurgerMeals() {
   const { branchDirectorActor } = useGlobalActors();
 
-  useEffect(() => {
-    const currentRestaurantChefName = fromChildActor(
-      branchDirectorActor,
-      ({ context }) => context.currentRestaurantActor
-    ).pipe(
-      toChildActor<KitchenLogic>("kitchen"),
-      toChildActor<ChefLogic>("chef"),
-      toActorState(({ context }) => context.name)
-    );
-
-    const sub = currentRestaurantChefName.subscribe(console.log);
-
-    return () => sub.unsubscribe();
-  }, [branchDirectorActor]);
-
   // TODO: create custom hook for child actor, selectors, etc.
   const [{ context: mealIsSelected }] = useActor(mealIsSelectedLogic, {
     input: { branchDirectorActor },
   });
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      sendSystemEvent<RestaurantLogic>(
+        branchDirectorActor.system,
+        "the-magic-city-grilll",
+        { type: "VIEW_MEAL", meal: meals[3] },
+        { timeout: 1000 }
+      )
+        .then(() => console.log("meal selected"))
+        .catch((err) => console.error(err));
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [branchDirectorActor.system]);
 
   return (
     <ScrollArea blockDisplay>
