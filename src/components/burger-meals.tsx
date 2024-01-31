@@ -23,6 +23,7 @@ import { useGlobalActors } from "@/globalState";
 import { cn, nameToInitials } from "@/lib/utils";
 import {
   fromChildActor,
+  fromSystemActor,
   sendSystemEvent,
   toActorState,
 } from "@/lib/observables/utils";
@@ -241,18 +242,28 @@ export function BurgerMeals() {
   });
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      sendSystemEvent<RestaurantLogic>(
+    const subs = [
+      fromSystemActor<RestaurantLogic>(
         branchDirectorActor.system,
         "the-magic-city-grilll",
-        { type: "VIEW_MEAL", meal: meals[3] },
-        { timeout: 1000 }
+        { timeout: 2000 }
       )
-        .then(() => console.log("meal selected"))
-        .catch((err) => console.error(err));
-    }, 1000);
+        .pipe(toActorState(({ context }) => context.currentMealView))
+        .subscribe(console.log),
+    ];
 
-    return () => clearTimeout(timeout);
+    return () => subs.forEach((sub) => sub.unsubscribe());
+  }, [branchDirectorActor]);
+
+  useEffect(() => {
+    sendSystemEvent<RestaurantLogic>(
+      branchDirectorActor.system,
+      "the-magic-city-grilll",
+      { type: "VIEW_MEAL", meal: meals[3] },
+      { timeout: 1000 }
+    )
+      .then(() => console.log("meal selected"))
+      .catch((err) => console.error(err));
   }, [branchDirectorActor.system]);
 
   return (

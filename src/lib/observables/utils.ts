@@ -157,12 +157,24 @@ export function toChildActor<
     );
 }
 
+type SystemQueryRetryConfig = {
+  delay?: number;
+  count: number;
+};
+type SystemQueryTimeoutConfig = {
+  delay?: number;
+  timeout: number;
+};
+
 export function fromSystemActor<TLogic extends AnyActorLogic>(
   system: AnyActorSystem,
   systemId: string,
-  retryCount?: number,
-  delay?: number
+  retryConfig: XOR<SystemQueryRetryConfig, SystemQueryTimeoutConfig> = {
+    count: 5,
+  }
 ): Observable<Actor<TLogic>> {
+  const initialTimestamp = performance.now();
+
   return defer(() => of(system.get(systemId) as Actor<TLogic>)).pipe(
     mergeMap((actor) =>
       actor !== undefined
@@ -172,26 +184,27 @@ export function fromSystemActor<TLogic extends AnyActorLogic>(
           )
     ),
     retry({
-      count: retryCount ?? 5,
-      delay: delay ?? 100,
+      count: retryConfig.count,
+      delay: (_, count) =>
+        animationFrames().pipe(
+          skipWhile(({ timestamp }) => {
+            const totalElapsed = timestamp - initialTimestamp;
+
+            if (totalElapsed > (retryConfig.timeout ?? Infinity))
+              throw new Error(`Actor with systemId: ${systemId} not found`);
+
+            return totalElapsed / count < (retryConfig.delay ?? 100);
+          })
+        ),
     })
   );
 }
-
-type SendSystemEventRetryConfig = {
-  delay?: number;
-  count: number;
-};
-type SendSystemEventTimeoutConfig = {
-  delay?: number;
-  timeout: number;
-};
 
 export function sendSystemEvent<TLogic extends AnyActorLogic>(
   system: AnyActorSystem,
   systemId: string,
   event: EventFromLogic<TLogic>,
-  retryConfig: XOR<SendSystemEventRetryConfig, SendSystemEventTimeoutConfig> = {
+  retryConfig: XOR<SystemQueryRetryConfig, SystemQueryTimeoutConfig> = {
     count: 5,
   }
 ): Promise<void> {
