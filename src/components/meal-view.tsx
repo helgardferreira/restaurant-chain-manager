@@ -4,11 +4,12 @@ import { useActor } from "@xstate/react";
 import { Button, ScrollArea } from ".";
 
 import { useGlobalActors } from "@/globalState";
-import { BranchDirectorActor } from "@/lib/actors/branchDirector.machine";
 import {
-  fromCurrentRestaurantActor,
-  toActorState,
-} from "@/lib/observables/utils";
+  BranchDirectorActor,
+  BranchDirectorLogic,
+} from "@/lib/actors/branchDirector.machine";
+import { fromChildActor, toActorState } from "@/lib/observables/utils";
+import { RestaurantLogic } from "@/lib/actors/restaurant.machine";
 
 const currentMealViewLogic = fromObservable(
   ({
@@ -16,9 +17,10 @@ const currentMealViewLogic = fromObservable(
   }: {
     input: { branchDirectorActor: BranchDirectorActor };
   }) =>
-    fromCurrentRestaurantActor(branchDirectorActor).pipe(
-      toActorState(({ context }) => context.currentMealView)
-    )
+    fromChildActor<RestaurantLogic, BranchDirectorLogic>(
+      branchDirectorActor,
+      ({ context }) => context.currentRestaurantActor
+    ).pipe(toActorState(({ context }) => context.currentMealView))
 );
 
 export default function MealView() {

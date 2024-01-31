@@ -15,13 +15,17 @@ import {
 
 import { fromIndexSearch } from "@/lib/observables/router";
 import {
-  fromCurrentRestaurantActor,
+  fromChildActor,
   toActorState,
   toRunningArray,
 } from "@/lib/observables/utils";
 import { randomWithSeed, hashStringToNumber } from "@/lib/utils";
 import { IngredientStock } from "@/lib/types";
-import { BranchDirectorActor } from "@/lib/actors/branchDirector.machine";
+import {
+  BranchDirectorActor,
+  BranchDirectorLogic,
+} from "@/lib/actors/branchDirector.machine";
+import { RestaurantLogic } from "@/lib/actors/restaurant.machine";
 import { Meal, meals, Ingredient, ingredients } from "@/data/meals";
 
 const fromRandomMeals = (meals: Meal[]) =>
@@ -65,7 +69,10 @@ const fromRandomIngredientsStock = () =>
   );
 
 const fromStockData = (branchDirectorActor: BranchDirectorActor) =>
-  fromCurrentRestaurantActor(branchDirectorActor).pipe(
+  fromChildActor<RestaurantLogic, BranchDirectorLogic>(
+    branchDirectorActor,
+    ({ context }) => context.currentRestaurantActor
+  ).pipe(
     toActorState(({ context }) => context.currentMealView?.ingredients ?? []),
     combineLatestWith(
       // TODO: replace with data from state machine and not random data

@@ -22,19 +22,27 @@ import { type Meal, meals } from "@/data/meals";
 import { useGlobalActors } from "@/globalState";
 import { cn, nameToInitials } from "@/lib/utils";
 import {
-  fromCurrentRestaurantActor,
+  fromChildActor,
   toActorState,
   toChildActor,
 } from "@/lib/observables/utils";
-import { BranchDirectorActor } from "@/lib/actors/branchDirector.machine";
-import { KitchenLogic } from "@/lib/actors/kitchen.machine";
+import {
+  BranchDirectorActor,
+  BranchDirectorLogic,
+} from "@/lib/actors/branchDirector.machine";
+import { RestaurantLogic } from "@/lib/actors/restaurant.machine";
+import { ChefLogic, KitchenLogic } from "@/lib/actors/kitchen.machine";
 
 const restaurantRefLogic = fromObservable(
   ({
     input: { branchDirectorActor },
   }: {
     input: { branchDirectorActor: BranchDirectorActor };
-  }) => fromCurrentRestaurantActor(branchDirectorActor)
+  }) =>
+    fromChildActor<RestaurantLogic, BranchDirectorLogic>(
+      branchDirectorActor,
+      ({ context }) => context.currentRestaurantActor
+    )
 );
 const currentMealViewLogic = fromObservable(
   ({
@@ -42,9 +50,10 @@ const currentMealViewLogic = fromObservable(
   }: {
     input: { branchDirectorActor: BranchDirectorActor };
   }) =>
-    fromCurrentRestaurantActor(branchDirectorActor).pipe(
-      toActorState(({ context }) => context.currentMealView)
-    )
+    fromChildActor<RestaurantLogic, BranchDirectorLogic>(
+      branchDirectorActor,
+      ({ context }) => context.currentRestaurantActor
+    ).pipe(toActorState(({ context }) => context.currentMealView))
 );
 
 type BurgerMealProps = {
@@ -218,23 +227,26 @@ const mealIsSelectedLogic = fromObservable(
   }: {
     input: { branchDirectorActor: BranchDirectorActor };
   }) =>
-    fromCurrentRestaurantActor(branchDirectorActor).pipe(
-      toActorState(({ context }) => !!context.currentMealView)
-    )
+    fromChildActor<RestaurantLogic, BranchDirectorLogic>(
+      branchDirectorActor,
+      ({ context }) => context.currentRestaurantActor
+    ).pipe(toActorState(({ context }) => !!context.currentMealView))
 );
 
 export function BurgerMeals() {
   const { branchDirectorActor } = useGlobalActors();
 
   useEffect(() => {
-    const sub = fromCurrentRestaurantActor(branchDirectorActor)
-      .pipe(
-        toChildActor<KitchenLogic>("kitchen"),
-        toActorState(({ context }) => context.stock)
-      )
-      .subscribe((stock) => {
-        console.log("kitchen stock", { stock });
-      });
+    const currentRestaurantChefName = fromChildActor(
+      branchDirectorActor,
+      ({ context }) => context.currentRestaurantActor
+    ).pipe(
+      toChildActor<KitchenLogic>("kitchen"),
+      toChildActor<ChefLogic>("chef"),
+      toActorState(({ context }) => context.name)
+    );
+
+    const sub = currentRestaurantChefName.subscribe(console.log);
 
     return () => sub.unsubscribe();
   }, [branchDirectorActor]);

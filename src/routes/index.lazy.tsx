@@ -15,12 +15,13 @@ import { StockOverview } from "@/components/stock-overview";
 import MealView from "@/components/meal-view";
 
 import { cn } from "@/lib/utils";
-import {
-  fromCurrentRestaurantActor,
-  toActorState,
-} from "@/lib/observables/utils";
+import { fromChildActor, toActorState } from "@/lib/observables/utils";
 import { useGlobalActors } from "@/globalState";
-import { BranchDirectorActor } from "@/lib/actors/branchDirector.machine";
+import {
+  BranchDirectorActor,
+  BranchDirectorLogic,
+} from "@/lib/actors/branchDirector.machine";
+import { RestaurantLogic } from "@/lib/actors/restaurant.machine";
 
 const indexSearchSchema = z.object({
   branchId: z.string().optional(),
@@ -39,9 +40,10 @@ const mealIsSelectedLogic = fromObservable(
   }: {
     input: { branchDirectorActor: BranchDirectorActor };
   }) =>
-    fromCurrentRestaurantActor(branchDirectorActor).pipe(
-      toActorState(({ context }) => !!context.currentMealView)
-    )
+    fromChildActor<RestaurantLogic, BranchDirectorLogic>(
+      branchDirectorActor,
+      ({ context }) => context.currentRestaurantActor
+    ).pipe(toActorState(({ context }) => !!context.currentMealView))
 );
 
 function Index() {

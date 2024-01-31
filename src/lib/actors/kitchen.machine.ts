@@ -1,9 +1,40 @@
-import { Actor, ActorLogicFrom, setup } from "xstate";
+import { Actor, ActorLogicFrom, setup, spawnChild } from "xstate";
 
 import { ingredients } from "@/data/meals";
 
 import { hashStringToNumber, randomWithSeed } from "../utils";
 import { IngredientStock } from "../types";
+
+// TODO: REMOVE EXAMPLE
+type ChefMachineContext = {
+  name: string;
+};
+
+type InitEvent = { type: "INIT" };
+type ChefMachineEvent = InitEvent;
+
+const chefMachine = setup({
+  types: {} as {
+    context: ChefMachineContext;
+    events: ChefMachineEvent;
+  },
+}).createMachine({
+  id: "chef",
+
+  context: {
+    name: "John",
+  },
+
+  initial: "idle",
+
+  states: {
+    idle: {},
+  },
+});
+
+export type ChefLogic = ActorLogicFrom<typeof chefMachine>;
+
+// TODO: REMOVE EXAMPLE
 
 type KitchenContext = {
   stock: IngredientStock[];
@@ -24,9 +55,14 @@ const kitchenMachine = setup({
     events: KitchenEvent;
     input: KitchenInput;
   },
-  actions: {},
+  actors: {
+    chefMachine,
+  },
+  actions: {
+    spawnChefs: spawnChild("chefMachine", { id: "chef" }),
+  },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QGsCWAXAxgCzAOwDoBDTdVANzAGIBhAGQHkBlAUQG0AGAXUVAAcA9rAyoBeXiAAeiAMwAOAKwEATAE4AbHPUcAjABY5egOwdlAGhABPRHJ0EFHRxwUy9e9UZkuAvt4tosXEJUCAAbagAFACUWCIBBGM4eJBBBYTIxCWkEHRkOewtrBGVTFT1VVTlDd2dVHV9-DBx8Aj4AJzA+IjbUPCgqGLiAEQBNJIk0kUyU7Pk9AjcFNSNlPR1lHQ5VPULEEuUyiqq3bQU63z8QPAEIOAkA5vEUyYyn0GyAWnVdhA+lCoqRlUMg0LiMa2UDRADyCxFIFDAEyEUzeUkQ5SMBABlWMEM22x+qnyHDkMhkGyMQJBqxkUJhLRC4SR6VEqOyenMVhsmIUpPJOkpwNUNLpTVh7U63V6UGZKKye20Kg4MnWCh++wI4KO1VO5wuQA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGsCWAXAxgCzAOwDoBDTdVANzAGIBhAGQHkBlAUQG0AGAXUVAAcA9rAyoBeXiAAeiAMwAOAKwEATAE4AbHPUcAjABY5egOwdlAGhABPRHJ0EFHRxwUy9e9UZkuAvt4tosXEJUCAAbagAFACUWCIBBGM4eJBBBYTIxCWkEHRkOewtrBGVTFT1VVTlDd2dVHV9-DBx8Aj4AJzA+IjbUPCgqGLiAEQBNJIk0kUyU7Pk9AjcFNSNlPR1lHQ5VPULEEuUyiqq3bQU63z8QPAEIOAkA5vEUyYyn0GyAWnVdhA+lCqOqiMhk2eQURgaIAeQWIpAoYAmQimbykiHKRgIAMqxjWGy2OysiFU+Q4chkMg2RiMqhkqlWMkh0JaIXCiPSohR2T05kJCDkGIUZIpOipNLpegZlyZhHanW6vSgbORWT22hUHBk6wUP32BCM5Uq1VO5wuQA */
   id: "kitchen",
 
   context: ({ input: { branchId } }): KitchenContext => {
@@ -66,6 +102,8 @@ const kitchenMachine = setup({
       },
     },
   },
+
+  entry: "spawnChefs",
 });
 
 type KitchenActor = Actor<typeof kitchenMachine>;
