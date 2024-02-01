@@ -1,4 +1,3 @@
-import { useActor } from "@xstate/react";
 import {
   Bar,
   BarChart,
@@ -14,22 +13,17 @@ import { useTheme } from "@/lib/hooks/useTheme";
 import { splitCamelCase, titleCase } from "@/lib/utils";
 import { useGlobalActors } from "@/globalState";
 
-import { dataLogic } from "./actors";
 import { ChartTooltip } from "./chart-tooltip";
+import { useStockData } from "./actors";
 
 export function StockOverview() {
   const { theme } = useTheme();
   const { branchDirectorActor } = useGlobalActors();
-
-  const [{ context: data }] = useActor(dataLogic, {
-    input: {
-      branchDirectorActor,
-    },
-  });
+  const stockData = useStockData(branchDirectorActor);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} margin={{ bottom: 50 }}>
+      <BarChart data={stockData} margin={{ bottom: 50 }}>
         <XAxis
           dataKey="name"
           stroke="#888888"
@@ -64,7 +58,11 @@ export function StockOverview() {
             }}
           />
         </YAxis>
-        <Bar dataKey="excess" fill="#fafafa" stackId="a" />
+        <Bar
+          dataKey="excess"
+          fill={theme === "light" ? "#09090b" : "#fafafa"}
+          stackId="a"
+        />
         <Bar dataKey="current" fill="#22c55e" stackId="a" />
         <Bar dataKey="inMenu" fill="#ef4444" stackId="a" />
         <Tooltip

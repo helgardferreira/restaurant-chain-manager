@@ -1,9 +1,15 @@
 import { Actor, ActorLogicFrom, setup } from "xstate";
+import { bind } from "@react-rxjs/core";
 
 import { ingredients } from "@/data/meals";
 
+import { useGlobalActors } from "@/globalState";
 import { hashStringToNumber, randomWithSeed } from "../utils";
 import { IngredientStock } from "../types";
+
+import type { BranchDirectorActor } from "./branchDirector.machine";
+import { fromCurrentRestaurantActor } from "./restaurant.machine";
+import { toChildActor } from "../observables/utils";
 
 type KitchenContext = {
   stock: IngredientStock[];
@@ -69,9 +75,21 @@ const kitchenMachine = setup({
   },
 });
 
+const [useKitchenFromBranch, fromCurrentKitchenActor] = bind(
+  (branchDirectorActor: BranchDirectorActor) =>
+    fromCurrentRestaurantActor(branchDirectorActor).pipe(
+      toChildActor<KitchenLogic>("kitchen")
+    )
+);
+
+function useCurrentKitchenActor() {
+  const { branchDirectorActor } = useGlobalActors();
+  return useKitchenFromBranch(branchDirectorActor);
+}
+
 type KitchenActor = Actor<typeof kitchenMachine>;
 type KitchenLogic = ActorLogicFrom<typeof kitchenMachine>;
 
 export type { KitchenActor, KitchenLogic };
 
-export { kitchenMachine };
+export { kitchenMachine, useCurrentKitchenActor, fromCurrentKitchenActor };

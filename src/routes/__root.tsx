@@ -3,6 +3,7 @@ import { createRootRoute, Outlet } from "@tanstack/react-router";
 
 import { MainNav } from "@/components/main-nav";
 import GlobalActorProvider from "@/globalState/GlobalActorProvider";
+import { Subscribe } from "@react-rxjs/core";
 
 const TanStackRouterDevtools =
   process.env.NODE_ENV === "production"
@@ -22,7 +23,9 @@ export const Route = createRootRoute({
       <div className="flex flex-col h-full overflow-hidden">
         <MainNav className="mx-6" />
 
-        <Outlet />
+        <Subscribe fallback={null}>
+          <Outlet />
+        </Subscribe>
       </div>
       <Suspense fallback={null}>
         <TanStackRouterDevtools />

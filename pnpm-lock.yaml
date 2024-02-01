@@ -41,6 +41,9 @@ dependencies:
   '@radix-ui/react-tooltip':
     specifier: ^1.0.7
     version: 1.0.7(@types/react-dom@18.2.18)(@types/react@18.2.48)(react-dom@18.2.0)(react@18.2.0)
+  '@react-rxjs/core':
+    specifier: ^0.10.7
+    version: 0.10.7(react@18.2.0)(rxjs@7.8.1)
   '@tailwindcss/aspect-ratio':
     specifier: ^0.4.2
     version: 0.4.2(tailwindcss@3.4.1)
@@ -1717,6 +1720,18 @@ packages:
       '@babel/runtime': 7.23.9
     dev: false
 
+  /@react-rxjs/core@0.10.7(react@18.2.0)(rxjs@7.8.1):
+    resolution: {integrity: sha512-dornp8pUs9OcdqFKKRh9+I2FVe21gWufNun6RYU1ddts7kUy9i4Thvl0iqcPFbGY61cJQMAJF7dxixWMSD/A/A==}
+    peerDependencies:
+      react: '>=16.8.0'
+      rxjs: '>=7'
+    dependencies:
+      '@rx-state/core': 0.1.4(rxjs@7.8.1)
+      react: 18.2.0
+      rxjs: 7.8.1
+      use-sync-external-store: 1.2.0(react@18.2.0)
+    dev: false
+
   /@rollup/rollup-android-arm-eabi@4.9.6:
     resolution: {integrity: sha512-MVNXSSYN6QXOulbHpLMKYi60ppyO13W9my1qogeiAqtjb2yR4LSmfU2+POvDkLzhjYLXz9Rf9+9a3zFHW1Lecg==}
     cpu: [arm]
@@ -1820,6 +1835,14 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@rx-state/core@0.1.4(rxjs@7.8.1):
+    resolution: {integrity: sha512-Z+3hjU2xh1HisLxt+W5hlYX/eGSDaXXP+ns82gq/PLZpkXLu0uwcNUh9RLY3Clq4zT+hSsA3vcpIGt6+UAb8rQ==}
+    peerDependencies:
+      rxjs: '>=7'
+    dependencies:
+      rxjs: 7.8.1
+    dev: false
 
   /@tailwindcss/aspect-ratio@0.4.2(tailwindcss@3.4.1):
     resolution: {integrity: sha512-8QPrypskfBa7QIMuKHg2TA7BqES6vhBrDLOv8Unb6FcFyd3TjKbc6lcmb9UPQHxfl24sXoJ41ux/H7qQQvfaSQ==}

@@ -237,7 +237,17 @@ export function sendSystemEvent<TLogic extends AnyActorLogic>(
   );
 }
 
-// TODO: make more generic
+export function fromActorState<TActor extends AnyActor, T>(
+  actor: TActor,
+  selector: (snapshot: SnapshotFrom<TActor>) => T
+) {
+  return fromActor(actor).pipe(
+    startWith(actor.getSnapshot()),
+    map(selector),
+    distinctUntilChanged()
+  );
+}
+
 export function toActorState<TActor extends AnyActor, T>(
   selector: (snapshot: SnapshotFrom<TActor>) => T
 ) {

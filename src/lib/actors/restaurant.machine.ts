@@ -1,9 +1,16 @@
 import { setup, sendTo, assign, Actor, ActorLogicFrom } from "xstate";
+import { bind } from "@react-rxjs/core";
 
 import { Meal } from "@/data/meals";
+import { useGlobalActors } from "@/globalState";
 
 import { kitchenMachine } from "./kitchen.machine";
 import { frontOfHouseMachine } from "./frontOfHouse.machine";
+import {
+  BranchDirectorActor,
+  BranchDirectorLogic,
+} from "./branchDirector.machine";
+import { fromChildActor } from "../observables/utils";
 
 type RestaurantContext = {
   menu: Meal[];
@@ -11,7 +18,8 @@ type RestaurantContext = {
   branchId: string;
 };
 
-type AddMealEvent = { type: "ADD_MEAL"; meal: Meal };
+type AddMealToMenuEvent = { type: "ADD_MEAL_TO_MENU"; meal: Meal };
+type RemoveMealFromMenuEvent = { type: "REMOVE_MEAL_FROM_MENU"; meal: Meal };
 type ViewMealEvent = { type: "VIEW_MEAL"; meal: Meal };
 type ClearMealEvent = { type: "CLEAR_MEAL" };
 type OpenEvent = { type: "OPEN" };
@@ -21,7 +29,8 @@ type ResetEvent = { type: "RESET" };
 type PrepareEvent = { type: "PREPARE" };
 
 type RestaurantEvent =
-  | AddMealEvent
+  | AddMealToMenuEvent
+  | RemoveMealFromMenuEvent
   | ViewMealEvent
   | ClearMealEvent
   | OpenEvent
@@ -67,10 +76,20 @@ const restaurantMachine = setup({
 
       return {};
     }),
-    addMealToMenu: sendTo("kitchen", (_, params: { meal: Meal }) => ({
-      type: "ADD_MEAL",
-      meal: params.meal,
-    })),
+    removeFromFrontOfHouseMenu: sendTo(
+      "frontOfHouse",
+      (_, params: { meal: Meal }) => ({
+        type: "REMOVE_MEAL_FROM_MENU",
+        meal: params.meal,
+      })
+    ),
+    addToFrontOfHouseMenu: sendTo(
+      "frontOfHouse",
+      (_, params: { meal: Meal }) => ({
+        type: "ADD_MEAL_TO_MENU",
+        meal: params.meal,
+      })
+    ),
     setCurrentMealView: assign((_, params: { meal: Meal }) => ({
       currentMealView: params.meal,
     })),
@@ -79,7 +98,7 @@ const restaurantMachine = setup({
     })),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QCc4BcCGBXZGB2aAdAA6rEDEAggCLUD6AsgKKUAyA2gAwC6ioxAe1gBLNMIF4+IAB6IArAA5CARgBsnZXNWqALJwVy5euQBoQAT0QBmHQHZCe1QCYFq5TatOAnE9UBfPzNUWEwcfCJSMAoANQBJJgB1RhYOHilBETEJKVkEOxVbOVtbZR0rOWUfHR1TC0QnOU5CLzkrUr0GyqtbAKD0bFwCEjJyAGFWFgAlZLYuXiQQDNFxSQXcnSczSwRNHUJGzkPKtU5FTh7AkGDQwYiRgHkABSYAOTn0oWXstfqdVUJOE4bCcFDYNMpbFtEDV-tUnLYrKpGt0gU5eld+mEhgJiGA8ORWJQAMoAFToozYqXm-E+WVWoHWOmUAOcdnUnBaCi82iheS0Dg2CKRnBRnnR1wG4UIAGMADafPBQciTJhEpgk94LJZ0nKILylQigxS2VSFc5tSF1PmwwWI5G2VHizG3EhCNCjeUiRWUPAQSZwMBociPFWPSgqzU0zIrXUIfV7I0KE1mhEQ3lWcqEVQ+Eo+ZSnPM6J0hSVDWUYEKjDCy2VjVj3NWRxa0mM-BDZuSEYrA1TdTim7q8mEC+F2kUOsXovACCBwKQSrFoD7R74MxAAWlUvM3AMOe-3e9KxZuUsixGXX3pMkQ+aaVi8-fcTlK3Tk3iHOiUBi8VgUlSTLiqAoRaXAuLo4niF46m25RNK0yjPiaD7nD4Q78l4GzZoCdhGG+x6lkQcoKlAUGtmuCAKPoDgmhUhR-GoqFWsOGG+A+Tg4TUaKgc6p5uh6xE+n6AZLlqLarteOycNU+y-i0cgtC4OheGhzLlD+FSlF4oKfvhi6EOWlbVrKpHibkxpdvmD5-HmHI6Gh-wsVh7F0XhAR+EAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QCc4BcCGBXZGB2aAdAA6rEbICWeUAxAIIAijA+gLICi9AMiwCoB5dhwByAVQDaABgC6iUMQD2sSmkqK88kAA9EANj2EArAGYjARj3mAHLakmALNb0AaEAE9EDhycLWjAJwmAVIWAEwA7HphAQC+sW6osJg4+ESkYORUNLQAagCSHADqwjzSckggSipqGlq6CNZhhFLmAaa2TdYBAdFungiOEYQOUtFR-jbORnrxiejYuAQkZBTUdADC3FwASqXc5VrVquqalQ1Rfj4RpnoB5ibWlv2IYUZShO0m5t6BJlZGMKzBIgJIpJbpVbZOgCAAKokOlWOtTOoAa3yMhAi5ikAR8Jm+YTerg8iCMgL87X8Thx3nMc1BC1SywyWXWtB2HDYAlyHH2LAAYjsBGxhOJEQplCc6ucvM0pArFUrFT8XghzEYHCMej0TBE9XiQhEGWDFmlCIpiGA8LRuPQAMp8FgbHgHWRHKUo+pknFY94Ktq47x9UkIcnNbpGalPKR0k1MiGEADGABspTlOfaOHwJVVPadvQgAtYtYDHMGbt4TGE1eHKVHNTG4yDTcz0so0Bs0yoaPQ8BAdnAwGhaLDObD6Jzc8iC7KiyXjGFyw49JWfDXQ+vCD8G84AkSwqF48kzcsUxhkhsMCmU7QtgIs9P8zK0YgopiV7j7HpHAYIrWKUjaNaQcekGTwRQIDgLRWwhD0alnV8EAAWkxHV0Iw4sSQGZDDGVfCAwcY9wXNVk1hoeDpVRHREHMSwsUcPUpAiaxq0CbxawcTFCXeUD9R-PFiNPIhLWtSivTnBxD0IMIbAiBwgg1YtQIA3xgijf5ZJMWMrCEttk27dZxMQmjGhY7c9FGPQpFY+4niMVTCHU1jogeHSwPmE99OqTtDN7ftB1gYdjJfUy6J+GSgXJBSInkn9OOGJ4wgcCIgliujIj0xNz0va8UxC6iGj0IxhmCEtvCiBVNUc5zNLclcwPiIA */
   id: "restaurant",
 
   context: ({ input: { branchId } }) => ({
@@ -88,21 +107,21 @@ const restaurantMachine = setup({
     branchId,
   }),
 
-  initial: "prep",
+  initial: "preparing",
 
   states: {
-    prep: {
+    preparing: {
       on: {
-        ADD_MEAL: {
-          target: "prep",
+        ADD_MEAL_TO_MENU: {
+          target: "preparing",
           actions: {
-            type: "addMealToMenu",
+            type: "addToFrontOfHouseMenu",
             params: ({ event }) => ({ meal: event.meal }),
           },
         },
 
         VIEW_MEAL: {
-          target: "prep",
+          target: "preparing",
           actions: {
             type: "setCurrentMealView",
             params: ({ event }) => ({ meal: event.meal }),
@@ -110,13 +129,21 @@ const restaurantMachine = setup({
         },
 
         CLEAR_MEAL: {
-          target: "prep",
+          target: "preparing",
           actions: "clearCurrentMealView",
         },
 
         OPEN: {
           target: "open",
           reenter: true,
+        },
+
+        REMOVE_MEAL_FROM_MENU: {
+          target: "preparing",
+          actions: {
+            type: "removeFromFrontOfHouseMenu",
+            params: ({ event }) => ({ meal: event.meal }),
+          },
         },
       },
     },
@@ -132,7 +159,7 @@ const restaurantMachine = setup({
     },
 
     postClosingAndReset: {
-      on: { PREPARE: "prep" },
+      on: { PREPARE: "preparing" },
     },
 
     lastCall: {
@@ -148,9 +175,26 @@ const restaurantMachine = setup({
   entry: ["spawnKitchen", "spawnFrontOfHouse"],
 });
 
+const [useRestaurantFromBranch, fromCurrentRestaurantActor] = bind(
+  (branchDirectorActor: BranchDirectorActor) =>
+    fromChildActor<RestaurantLogic, BranchDirectorLogic>(
+      branchDirectorActor,
+      ({ context }) => context.currentRestaurantActor
+    )
+);
+
+function useCurrentRestaurantActor() {
+  const { branchDirectorActor } = useGlobalActors();
+  return useRestaurantFromBranch(branchDirectorActor);
+}
+
 type RestaurantActor = Actor<typeof restaurantMachine>;
 type RestaurantLogic = ActorLogicFrom<typeof restaurantMachine>;
 
 export type { RestaurantActor, RestaurantLogic };
 
-export { restaurantMachine };
+export {
+  restaurantMachine,
+  useCurrentRestaurantActor,
+  fromCurrentRestaurantActor,
+};

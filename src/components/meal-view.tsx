@@ -1,33 +1,44 @@
-import { fromObservable } from "xstate";
-import { useActor } from "@xstate/react";
+import { useCallback, useMemo } from "react";
+import { useSelector } from "@xstate/react";
 
 import { Button, ScrollArea } from ".";
 
-import { useGlobalActors } from "@/globalState";
-import {
-  BranchDirectorActor,
-  BranchDirectorLogic,
-} from "@/lib/actors/branchDirector.machine";
-import { fromChildActor, toActorState } from "@/lib/observables/utils";
-import { RestaurantLogic } from "@/lib/actors/restaurant.machine";
-
-const currentMealViewLogic = fromObservable(
-  ({
-    input: { branchDirectorActor },
-  }: {
-    input: { branchDirectorActor: BranchDirectorActor };
-  }) =>
-    fromChildActor<RestaurantLogic, BranchDirectorLogic>(
-      branchDirectorActor,
-      ({ context }) => context.currentRestaurantActor
-    ).pipe(toActorState(({ context }) => context.currentMealView))
-);
+import { useCurrentRestaurantActor } from "@/lib/actors/restaurant.machine";
+import { useCurrentFrontOfHouseActor } from "@/lib/actors/frontOfHouse.machine";
 
 export default function MealView() {
-  const { branchDirectorActor } = useGlobalActors();
-  const [{ context: currentMealView }] = useActor(currentMealViewLogic, {
-    input: { branchDirectorActor },
-  });
+  const restaurantActor = useCurrentRestaurantActor();
+  const frontOfHouseActor = useCurrentFrontOfHouseActor();
+
+  const currentMealView = useSelector(
+    restaurantActor,
+    ({ context }) => context.currentMealView
+  );
+  const currentMenu = useSelector(
+    frontOfHouseActor,
+    ({ context }) => context.menu
+  );
+
+  const mealIsInMenu = useMemo(
+    () => currentMenu.some(({ id }) => id === currentMealView?.id),
+    [currentMealView, currentMenu]
+  );
+
+  const addOrRemoveMeal = useCallback(() => {
+    if (!currentMealView) return;
+
+    if (mealIsInMenu) {
+      restaurantActor.send({
+        type: "REMOVE_MEAL_FROM_MENU",
+        meal: currentMealView,
+      });
+    } else {
+      restaurantActor.send({
+        type: "ADD_MEAL_TO_MENU",
+        meal: currentMealView,
+      });
+    }
+  }, [mealIsInMenu, restaurantActor, currentMealView]);
 
   if (!currentMealView) return null;
 
@@ -67,7 +78,9 @@ export default function MealView() {
               className="object-cover object-center w-full h-full"
             />
           </div>
-          <Button>Add to menu</Button>
+          <Button onClick={addOrRemoveMeal}>
+            {mealIsInMenu ? "Remove meal" : "Add meal"}
+          </Button>
         </div>
       </div>
     </ScrollArea>
