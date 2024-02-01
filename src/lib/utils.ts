@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Random, MersenneTwister19937 } from "random-js";
+import type { OsString } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -43,4 +44,27 @@ export function nameToInitials(name: string): string {
     .map((word) => word.charAt(0).toUpperCase())
     .join("");
   return initials;
+}
+
+export function getOperatingSystem(): OsString {
+  const userAgent = window.navigator.userAgent;
+  const platform = window.navigator.platform;
+  const macosPlatforms = ["Macintosh", "MacIntel", "MacPPC", "Mac68K"];
+  const windowsPlatforms = ["Win32", "Win64", "Windows", "WinCE"];
+  const iosPlatforms = ["iPhone", "iPad", "iPod"];
+  let os = null;
+
+  if (macosPlatforms.indexOf(platform) !== -1) {
+    os = "Mac OS" as const;
+  } else if (iosPlatforms.indexOf(platform) !== -1) {
+    os = "iOS" as const;
+  } else if (windowsPlatforms.indexOf(platform) !== -1) {
+    os = "Windows" as const;
+  } else if (/Android/.test(userAgent)) {
+    os = "Android" as const;
+  } else if (!os && /Linux/.test(platform)) {
+    os = "Linux" as const;
+  }
+
+  return os;
 }

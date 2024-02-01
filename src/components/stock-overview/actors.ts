@@ -53,7 +53,8 @@ const [useStockData, fromStockData] = bind(
       branchDirectorActor,
       ({ context }) => context.currentRestaurantActor
     ).pipe(
-      toActorState(({ context }) => context.currentMealView?.ingredients ?? []),
+      toActorState(({ context }) => context.selectedMeals),
+      switchMap((selectedMeals) => from(selectedMeals).pipe(toIngredients)),
       combineLatestWith(
         fromMenuIngredients(branchDirectorActor),
         fromKitchenStock(branchDirectorActor)
@@ -62,7 +63,8 @@ const [useStockData, fromStockData] = bind(
         stockData.map((ingredient) => {
           const newIngredient = structuredClone(ingredient);
 
-          if (currentIngredients.some((i) => i.id === ingredient.id)) {
+          const currentIngredientCount = currentIngredients[ingredient.id];
+          if (currentIngredientCount !== undefined) {
             newIngredient.current = 1;
             newIngredient.excess -= 1;
           }

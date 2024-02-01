@@ -1,5 +1,6 @@
 import { ActorLogicFrom, assign, setup } from "xstate";
 import { bind } from "@react-rxjs/core";
+import { differenceBy, unionBy } from "lodash";
 
 import { Meal } from "@/data/meals";
 import { useGlobalActors } from "@/globalState";
@@ -12,13 +13,20 @@ type FrontOfHouseMachineContext = {
 };
 
 type AddMealToMenuEvent = { type: "ADD_MEAL_TO_MENU"; meal: Meal };
+type AddMealsToMenuEvent = { type: "ADD_MEALS_TO_MENU"; meals: Meal[] };
 type RemoveMealFromMenuEvent = { type: "REMOVE_MEAL_FROM_MENU"; meal: Meal };
+type RemoveMealsFromMenuEvent = {
+  type: "REMOVE_MEALS_FROM_MENU";
+  meals: Meal[];
+};
 type PrepareEvent = { type: "PREPARE" };
 type ReadyEvent = { type: "READY" };
 type CloseEvent = { type: "CLOSE" };
 type FrontOfHouseMachineEvent =
   | AddMealToMenuEvent
+  | AddMealsToMenuEvent
   | RemoveMealFromMenuEvent
+  | RemoveMealsFromMenuEvent
   | PrepareEvent
   | ReadyEvent
   | CloseEvent;
@@ -29,23 +37,27 @@ const frontOfHouseMachine = setup({
     events: FrontOfHouseMachineEvent;
   },
   actions: {
-    updateMenu: assign(({ context: { menu } }, params: { meal: Meal }) => {
+    addMeal: assign(({ context: { menu } }, params: { meal: Meal }) => {
       const existingMealIndex = menu.findIndex((m) => m.id === params.meal.id);
-      if (existingMealIndex !== -1) {
-        return {
-          menu: menu
-            .slice(0, existingMealIndex)
-            .concat(menu.slice(existingMealIndex + 1)),
-        };
-      }
-
-      return {
-        menu: menu.concat(params.meal),
-      };
+      if (existingMealIndex !== -1) return {};
+      return { menu: menu.concat(params.meal) };
+    }),
+    addMeals: assign(({ context: { menu } }, params: { meals: Meal[] }) => {
+      const newMenu = unionBy(menu, params.meals, "id");
+      return { menu: newMenu };
+    }),
+    removeMeal: assign(({ context: { menu } }, params: { meal: Meal }) => {
+      const existingMealIndex = menu.findIndex((m) => m.id === params.meal.id);
+      if (existingMealIndex === -1) return {};
+      return { menu: menu.filter((m) => m.id !== params.meal.id) };
+    }),
+    removeMeals: assign(({ context: { menu } }, params: { meals: Meal[] }) => {
+      const newMenu = differenceBy(menu, params.meals, "id");
+      return { menu: newMenu };
     }),
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5QDMBOB7AdgFwPLIAl0BXWMAOgEsIAbMAYgAUAlAUUYEE2BtABgF1EoAA7pYlbJSxCQAD0QBWAEwB2cgBYAjOt4A2JQoA0IAJ6JNu3eSUBmAJwK7ADkdLNS204C+X42ix4hCRk5MKoYMIAhqiUmFD0bBwAIgCafIJIIKLiktKZ8gg2mgrkKpq8djYqRqaISk5Wzg7Oru5K6j5+GDj4RKQUYRHRsfHJSQD6ALKsHAAy4wAquFOsAHIAquky2RJSmDIFKrzkvE5KvEUGxmYImipqDkU6Bk4qTnZ6nSD+PUH95JEAMaSABuDAAwrNcABlVhbTI7XL7fKKVQabR6K61BD1RrvRwuOxuDwdXzfbqBPohQZRGJxBKsSa4ABqrBWc3GADFmLhJisNvCRGJdnlQAV1EprognJpyApeArii83h9dD4yZh0BA4DIfpTgmBtsKkQdEABaXRShAWr563oGqi0Q0I417U0IXQKNSaO6aV41G71WWqpSe5XvT5ku1-anhWkjI05N0o24WUo2dRVAN1FR2DSYsMKV4RtVRin2-5A0HOoVJ0VyRASvOhhT6bM414afEtIltUk+IA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QDMBOB7AdgFwPLIAl0BXWMAOgEsIAbMAYgAUAlAUUYEE2BtABgF1EoAA7pYlbJSxCQAD0QBWAMwB2cgEYALAA5NmgExLeKnSvUAaEAE9EShQE4NmhdoBs6ldv0qFzgL5+lmhYeIQkZOTCqGDCAIaolJhQ9GwcACIAmnyCSCCi4pLSufIISvoK5HrK6uWWNgiaKo7a9i6uCrya9tpKmuoBQRg4+ESkFFEx8YnJ6WkA+gCyrBwAMnMAKriLrAByAKrZMvkSUpgyJSbk9l36vA5d9rzlSnW2Krzk2vfqvK5GyvZ+oEQMFhmExpFonEEkl6LNtqsAMobLZLfaHXLHQpnYqId7kXheXhlTTEx5uFSvBDeTSVX76R5-JSuToDEFDUKjCITaHTFKsBa4ABqrARawAYsxcAttuiBEcxCciqASppXJ9XGYetpfqo1ZTrIgPGpWkoah1eJara42aDOeEKLEAMaSABuDAAwitcIjWBiRIrsedFKonLoDEYTNozFTGs1Wm4Ol0en1bRyRg7IZMYck2IKRWLkZLpbKDvLMYHTsGGvoqdp1OQFAFgZh0BA4DI7RmxgqClXcQgALSuKnDglW4yuBlKa7VNMhbsRah0XtKnEqxCuLefBTqBQKKcubzuWOXevPekmEz6edgrnjKFTJKroMDmoNll75SdfTaXT2WtDQaFR9HIM0LynK8DFve0IWdN0wBffsNwaJRtCuexMK8NVo21WMdTAhN2k6bpeiBAIgA */
   id: "frontOfHouse",
 
   context: {
@@ -68,16 +80,32 @@ const frontOfHouseMachine = setup({
         ADD_MEAL_TO_MENU: {
           target: "preparing",
           actions: {
-            type: "updateMenu",
+            type: "addMeal",
             params: ({ event }) => ({ meal: event.meal }),
+          },
+        },
+
+        ADD_MEALS_TO_MENU: {
+          target: "preparing",
+          actions: {
+            type: "addMeals",
+            params: ({ event }) => ({ meals: event.meals }),
           },
         },
 
         REMOVE_MEAL_FROM_MENU: {
           target: "preparing",
           actions: {
-            type: "updateMenu",
+            type: "removeMeal",
             params: ({ event }) => ({ meal: event.meal }),
+          },
+        },
+
+        REMOVE_MEALS_FROM_MENU: {
+          target: "preparing",
+          actions: {
+            type: "removeMeals",
+            params: ({ event }) => ({ meals: event.meals }),
           },
         },
       },

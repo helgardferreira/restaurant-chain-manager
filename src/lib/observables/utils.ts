@@ -28,6 +28,7 @@ import {
   EventFromLogic,
 } from "xstate";
 import { XOR } from "ts-xor";
+import { getOperatingSystem } from "../utils";
 
 export function toRunningArray<T extends object>(
   comparator: (source: T, against: T) => boolean = (previous, current) => {
@@ -61,6 +62,74 @@ export function filterNullish<T>(
     >
   );
 }
+
+export const scanShortcut = () => {
+  const osString = getOperatingSystem();
+  const metaModifier = osString === "Mac OS" ? "MetaLeft" : "ControlLeft";
+
+  return (
+    source$: Observable<{
+      code: string;
+      type: "up" | "down";
+      event: KeyboardEvent;
+    }>
+  ) =>
+    source$.pipe(
+      scan(
+        (acc, { code, type, event }) => {
+          const sequence: Set<string> = acc.sequence;
+          if (type === "down") {
+            if (
+              (code === metaModifier && acc.shift) ||
+              (code === "ShiftLeft" && acc.meta)
+            ) {
+              sequence.forEach((key) => {
+                if (key === metaModifier || key === "ShiftLeft") return;
+                sequence.delete(key);
+              });
+            }
+
+            if (code === metaModifier) {
+              acc.meta = true;
+            } else if (code === "ShiftLeft") {
+              acc.shift = true;
+            }
+
+            sequence.add(code);
+          } else {
+            if (code === metaModifier || code === "ShiftLeft") {
+              sequence.forEach((key) => {
+                if (key === metaModifier || key === "ShiftLeft") return;
+                sequence.delete(key);
+              });
+            }
+
+            if (code === metaModifier) {
+              acc.meta = false;
+            } else if (code === "ShiftLeft") {
+              acc.shift = false;
+            }
+
+            sequence.delete(code);
+          }
+
+          acc.event = event;
+
+          return acc;
+        },
+        {
+          sequence: new Set<string>(),
+          meta: false,
+          shift: false,
+          event: new KeyboardEvent("keydown") as KeyboardEvent,
+        }
+      ),
+      map(({ sequence, event }) => ({
+        sequence: Array.from(sequence.values()).sort().join(),
+        event,
+      }))
+    );
+};
 
 // TODO: remove once https://github.com/statelyai/xstate/issues/4711 is fixed
 export function fromActor<TLogic extends AnyActorLogic>(

@@ -24,19 +24,23 @@ import { useCurrentFrontOfHouseActor } from "@/lib/actors/frontOfHouse.machine";
 
 type BurgerMealProps = {
   meal: Meal;
-  currentMealView: Meal | undefined;
+  selectedMeals: Meal[];
   currentMenu: Meal[];
 };
 
 function BurgerMeal(props: BurgerMealProps) {
-  const { currentMealView, currentMenu, meal } = props;
+  const { selectedMeals, currentMenu, meal } = props;
   const { imageSrc, name, ingredients } = meal;
 
   const restaurantActor = useCurrentRestaurantActor();
 
   const mealIsActive = useMemo(
-    () => currentMealView?.id === meal.id,
-    [currentMealView?.id, meal.id]
+    () => selectedMeals.some((selectedMeal) => selectedMeal.id === meal.id),
+    [selectedMeals, meal.id]
+  );
+  const mealIsSelected = useSelector(
+    restaurantActor,
+    ({ context }) => context.selectedMeals.length > 0
   );
   const mealIsInMenu = useMemo(
     () => currentMenu.some(({ id }) => id === meal.id),
@@ -44,26 +48,33 @@ function BurgerMeal(props: BurgerMealProps) {
   );
 
   const addOrRemoveMeal = useCallback(() => {
-    if (mealIsInMenu) {
-      restaurantActor.send({
-        type: "REMOVE_MEAL_FROM_MENU",
-        meal,
-      });
+    if (!meal) return;
+
+    if (selectedMeals.length === 1) {
+      if (mealIsInMenu) {
+        restaurantActor.send({
+          type: "REMOVE_MEAL_FROM_MENU",
+          meal: meal,
+        });
+      } else {
+        restaurantActor.send({
+          type: "ADD_MEAL_TO_MENU",
+          meal: meal,
+        });
+      }
     } else {
-      restaurantActor.send({
-        type: "ADD_MEAL_TO_MENU",
-        meal,
-      });
+      restaurantActor.send({ type: "ADD_MEALS_TO_MENU" });
     }
-  }, [mealIsInMenu, restaurantActor, meal]);
-  const toggleViewMeal = useCallback(() => {
+  }, [meal, mealIsInMenu, restaurantActor, selectedMeals.length]);
+  const toggleSelectedMeal = useCallback(() => {
     if (mealIsActive) {
       restaurantActor.send({
-        type: "CLEAR_MEAL",
+        type: "DESELECT_MEAL",
+        meal,
       });
     } else {
       restaurantActor.send({
-        type: "VIEW_MEAL",
+        type: "SELECT_MEAL",
         meal,
       });
     }
@@ -71,10 +82,10 @@ function BurgerMeal(props: BurgerMealProps) {
   const handleMealSelect = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter") {
-        toggleViewMeal();
+        toggleSelectedMeal();
       }
     },
-    [toggleViewMeal]
+    [toggleSelectedMeal]
   );
 
   return (
@@ -90,9 +101,9 @@ function BurgerMeal(props: BurgerMealProps) {
               "items-center",
               "mx-1",
               "px-2",
-              !currentMealView && "py-1",
+              !mealIsSelected && "py-1",
               "overflow-hidden",
-              currentMealView ? "rounded" : "rounded-md",
+              mealIsSelected ? "rounded" : "rounded-md",
               "grow",
               "select-none",
               "hover:bg-accent",
@@ -115,12 +126,12 @@ function BurgerMeal(props: BurgerMealProps) {
               "before:bg-green-500",
               "before:rounded-md"
             )}
-            onClick={toggleViewMeal}
+            onClick={toggleSelectedMeal}
             onKeyUp={handleMealSelect}
           >
             <Avatar
               className={cn(
-                currentMealView ? "h-6 w-6" : "h-9 w-9",
+                mealIsSelected ? "h-6 w-6" : "h-9 w-9",
                 "transition-[height,width]"
               )}
             >
@@ -131,7 +142,7 @@ function BurgerMeal(props: BurgerMealProps) {
               className={cn(
                 "w-full",
                 "ml-4",
-                currentMealView ? "space-y-0" : "space-y-1",
+                mealIsSelected ? "space-y-0" : "space-y-1",
                 "overflow-hidden"
               )}
             >
@@ -139,7 +150,7 @@ function BurgerMeal(props: BurgerMealProps) {
                 className={cn(
                   "font-medium",
                   "leading-none",
-                  !currentMealView && "text-sm",
+                  !mealIsSelected && "text-sm",
                   "transition-[font-size,margin]"
                 )}
               >
@@ -151,7 +162,7 @@ function BurgerMeal(props: BurgerMealProps) {
                   "truncate",
                   "text-muted-foreground",
                   "leading-none",
-                  currentMealView ? "h-0" : "h-4",
+                  mealIsSelected ? "h-0" : "h-4",
                   "transition-[height,margin]"
                 )}
               >
@@ -161,7 +172,7 @@ function BurgerMeal(props: BurgerMealProps) {
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem onSelect={toggleViewMeal}>
+          <ContextMenuItem onSelect={toggleSelectedMeal}>
             {mealIsActive ? "Close meal" : "View meal"}
           </ContextMenuItem>
           <ContextMenuItem onSelect={addOrRemoveMeal}>
@@ -176,10 +187,10 @@ function BurgerMeal(props: BurgerMealProps) {
             variant="ghost"
             className={cn(
               "flex",
-              currentMealView ? "h-6 w-6" : "h-8 w-8",
-              currentMealView ? "rounded" : "rounded-md",
+              mealIsSelected ? "h-6 w-6" : "h-8 w-8",
+              mealIsSelected ? "rounded" : "rounded-md",
               "mx-2",
-              !currentMealView && "my-1",
+              !mealIsSelected && "my-1",
               "p-0",
               "data-[state=open]:bg-accent",
               "shrink-0",
@@ -191,11 +202,14 @@ function BurgerMeal(props: BurgerMealProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onSelect={toggleViewMeal}>
+          <DropdownMenuItem onSelect={toggleSelectedMeal}>
             {mealIsActive ? "Close meal" : "View meal"}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={addOrRemoveMeal}>
-            {mealIsInMenu ? "Remove meal" : "Add meal"}
+            {selectedMeals.length === 0 && "Add meal"}
+            {selectedMeals.length === 1 && !mealIsInMenu && "Add meal"}
+            {selectedMeals.length === 1 && mealIsInMenu && "Remove meal"}
+            {selectedMeals.length > 1 && "Add meals"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -211,17 +225,22 @@ export function BurgerMeals() {
     frontOfHouseActor,
     ({ context }) => context.menu
   );
-  const currentMealView = useSelector(
+  const selectedMeals = useSelector(
     restaurantActor,
-    ({ context }) => context.currentMealView
+    ({ context }) => context.selectedMeals
   );
 
   return (
     <ScrollArea blockDisplay>
-      <div className={cn("py-1", currentMealView ? "space-y-1" : "space-y-2")}>
+      <div
+        className={cn(
+          "py-1",
+          selectedMeals.length > 0 ? "space-y-1" : "space-y-2"
+        )}
+      >
         {meals.map((meal) => (
           <BurgerMeal
-            currentMealView={currentMealView}
+            selectedMeals={selectedMeals}
             currentMenu={currentMenu}
             key={meal.id}
             meal={meal}

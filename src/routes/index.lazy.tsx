@@ -39,7 +39,11 @@ function Index() {
   );
   const mealIsSelected = useSelector(
     restaurantActor,
-    ({ context }) => !!context.currentMealView
+    ({ context }) => context.selectedMeals.length > 0
+  );
+  const revenue = useSelector(
+    restaurantActor,
+    ({ context }) => context.revenue
   );
 
   return (
@@ -71,10 +75,11 @@ function Index() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$45,231.89</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-2xl font-bold">${revenue}</div>
+                {/* TODO: PERHAPS TRACK REVENUE CHANGE OVER TIME */}
+                {/* <p className="text-xs text-muted-foreground">
                   +20.1% from last month
-                </p>
+                </p> */}
               </CardContent>
             </Card>
             <Card>
